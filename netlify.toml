@@ -1,0 +1,4 @@
+# Netlify serves only the two test variants (+ private landing).
+# The master source (index.html with the toggle) and backups stay out of the deploy.
+[build]
+  publish = "useberry-deploy"
