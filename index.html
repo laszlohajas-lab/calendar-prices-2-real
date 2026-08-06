@@ -483,6 +483,12 @@
     .info-banner{display:flex;align-items:center;gap:12px;background:var(--surface-quinary);border-radius:var(--radius-m);padding:10px 16px;}
     .info-banner .info-ico{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface-primary);color:#fff;font:italic 700 13px Georgia,serif;display:grid;place-items:center;}
     .info-banner .info-txt{font-size:14px;line-height:20px;color:var(--text-primary);}
+    /* Price-trends day-view disclaimer (icon + text, no background) */
+    .tr-note{display:flex;align-items:center;gap:8px;margin:-4px 0 4px;}
+    .tr-note .info-ico{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface-primary);color:#fff;font:italic 700 13px Georgia,serif;display:grid;place-items:center;}
+    .tr-note .tr-note-txt{font-size:14px;line-height:20px;color:var(--text-primary);font-weight:400;}
+    .tr-note .tr-note-txt.semibold{font-weight:600;}
+    .tr-note .tr-note-txt b{font-weight:700;}
     /* footer from-chip */
     .legend .fromchip{background:var(--surface-success);border-radius:var(--radius-m);padding:6px 12px;font-weight:600;font-size:14px;color:var(--text-primary);white-space:nowrap;}
     /* price trends */
@@ -1119,6 +1125,14 @@
       const head=elc('tr-head');
       const back=document.createElement('button'); back.className='tr-back'; back.innerHTML='&#8249;&nbsp;&nbsp;All months'; back.onclick=()=>{ state.v4Layer='year'; renderDatePanel(); };
       head.append(back, elc('tr-title','Cheapest days to fly in '+MONTHS[m]+' '+y)); el.appendChild(head);
+      // Disclaimer between the title and the price graph — copy switches with the calendar behaviour.
+      const note=elc('tr-note');
+      const nico=document.createElement('span'); nico.className='info-ico'; nico.setAttribute('aria-hidden','true'); nico.textContent='i';
+      const ntx=document.createElement('span'); ntx.className='tr-note-txt'+(state.behavior==='separate'?'':' semibold');
+      ntx.innerHTML = (state.behavior==='separate')
+        ? '<b>Green updates as you go:</b> cheapest days to set off, then the cheapest dates to return.'
+        : 'The best-value roundtrip days are in green. Pick what fits your plans and travel for less.';
+      note.append(nico, ntx); el.appendChild(note);
       const dep=state.departure, ret=(state.tripType==='round')?state.return:null;
       // V2 · Separate: when editing the return, prices + cheapest set follow the return leg
       // (so the green bars differ on inbound vs outbound), exactly like the calendar.
