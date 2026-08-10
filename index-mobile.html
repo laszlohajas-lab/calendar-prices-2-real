@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Prices Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ---- Design tokens (from Figma) ---- */
+    :root{
+      --text-primary:#00223e;
+      --text-white:#ffffff;
+      --text-muted:#5b6b78;
+      --surface-white:#ffffff;
+      --surface-primary:#00223e;
+      --surface-quarternary:#d9dee2;
+      --surface-quinary:#f0f2f3;
+      --surface-success:#adebad;
+      --accent:#c9ee00;
+      --stroke-primary:#d9dee2;
+      --radius-m:8px;
+      --radius-l:16px;
+      --radius-full:999px;
+      --sp-2xs:4px; --sp-xs:8px; --sp-s:12px; --sp-m:16px; --sp-xl:24px;
+      --shadow-s:0 1px 4px rgba(0,34,62,.05), 0 4px 8px rgba(0,34,62,.10);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body{margin:0;padding:0;height:100%;}
+    body{
+      font-family:'Figtree',system-ui,-apple-system,sans-serif;
+      color:var(--text-primary);
+      background:var(--surface-primary);
+      font-size:16px;line-height:24px;
+      -webkit-font-smoothing:antialiased;
+    }
+    button{font:inherit;color:inherit;border:0;background:transparent;cursor:pointer;}
+    /* Phone column: full width on mobile, centred phone frame on larger screens */
+    .app{
+      position:relative;width:100%;max-width:430px;margin:0 auto;
+      min-height:100dvh;background:var(--surface-primary);overflow:hidden;
+    }
+    @media (min-width:600px){
+      body{background:#0b1a29;}
+      .app{min-height:100dvh;box-shadow:0 0 60px rgba(0,0,0,.4);}
+    }
+
+    /* ---------- Screens ---------- */
+    .screen{display:none;flex-direction:column;min-height:100dvh;}
+    .screen.active{display:flex;}
+
+    /* ---------- HOME ---------- */
+    #screenHome{background:var(--surface-primary);}
+    .nav-top{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-m) var(--sp-m) 0;}
+    .logo-svg{display:block;height:28px;width:auto;}
+    .lang{display:flex;align-items:center;gap:6px;color:var(--text-white);font-size:14px;font-weight:600;}
+    .lang svg{display:block;}
+    .cat-tabs{display:flex;gap:var(--sp-xs);padding:var(--sp-m);overflow-x:auto;scrollbar-width:none;}
+    .cat-tabs::-webkit-scrollbar{display:none;}
+    .cat{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:var(--radius-m);
+      color:var(--text-white);font-size:16px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+    .cat svg{display:block;width:20px;height:20px;}
+    .cat[aria-pressed="true"]{background:var(--accent);color:var(--text-primary);}
+    h1.hero{margin:8px var(--sp-m) 0;color:var(--text-white);font-size:28px;line-height:36px;font-weight:800;letter-spacing:-.5px;}
+    @media (max-width:360px){ h1.hero{font-size:24px;line-height:31px;} }
+
+    .search-card{
+      background:var(--surface-white);border-radius:var(--radius-l);
+      padding:var(--sp-m);margin:var(--sp-xl) var(--sp-m) var(--sp-xl);
+      display:flex;flex-direction:column;gap:var(--sp-m);
+    }
+    .trip-toggle{display:flex;align-items:center;background:var(--surface-quarternary);
+      border-radius:var(--radius-full);padding:var(--sp-2xs);}
+    .trip-toggle button{flex:1;padding:var(--sp-xs) 0;border-radius:var(--radius-full);
+      font-size:14px;line-height:20px;font-weight:600;text-align:center;}
+    .trip-toggle button[aria-pressed="true"]{background:var(--surface-white);}
+
+    .fields{display:flex;flex-direction:column;gap:var(--sp-xs);}
+    .loc-group{position:relative;border:1px solid var(--stroke-primary);border-radius:var(--radius-m);
+      padding:var(--sp-xs) 0;display:flex;flex-direction:column;gap:var(--sp-xs);}
+    .field{display:flex;flex-direction:column;padding:0 var(--sp-s);text-align:left;width:100%;}
+    .field .lbl{font-size:14px;line-height:20px;font-weight:700;}
+    .field .val{font-size:16px;line-height:24px;font-weight:600;}
+    .field .val.placeholder{color:var(--text-muted);font-weight:600;}
+    .loc-divider{height:1px;background:var(--stroke-primary);margin:0;}
+    .swap{position:absolute;right:23px;top:50%;transform:translateY(-50%);
+      width:40px;height:40px;border-radius:var(--radius-m);background:var(--surface-white);
+      box-shadow:var(--shadow-s);display:grid;place-items:center;}
+    .swap svg{display:block;width:20px;height:20px;}
+    .row2{display:flex;gap:var(--sp-xs);}
+    .row2 .field{border:1px solid var(--stroke-primary);border-radius:var(--radius-m);
+      padding:var(--sp-xs) var(--sp-s);flex:1;min-width:0;}
+    .row2 .field .val{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .nonstop{display:flex;align-items:center;gap:var(--sp-xs);}
+    .nonstop .box{width:24px;height:24px;border:2px solid var(--stroke-primary);border-radius:var(--radius-m);
+      flex-shrink:0;display:grid;place-items:center;}
+    .nonstop .box svg{display:none;width:16px;height:16px;}
+    .nonstop[aria-checked="true"] .box{background:var(--surface-primary);border-color:var(--surface-primary);}
+    .nonstop[aria-checked="true"] .box svg{display:block;}
+    .nonstop .txt{font-size:14px;line-height:20px;font-weight:600;}
+    .cta{background:var(--accent);height:48px;border-radius:var(--radius-m);
+      font-size:16px;line-height:24px;font-weight:700;width:100%;}
+
+    /* ---------- CALENDAR ---------- */
+    #screenCal{background:var(--surface-white);}
+    .cal-head{background:var(--surface-white);border-bottom:1px solid var(--stroke-primary);
+      padding:var(--sp-xl) var(--sp-m) var(--sp-m);display:flex;flex-direction:column;gap:var(--sp-xl);
+      flex-shrink:0;position:sticky;top:0;z-index:5;}
+    .cal-title-row{display:flex;align-items:center;gap:var(--sp-xl);}
+    .back{width:24px;height:24px;display:grid;place-items:center;flex-shrink:0;}
+    .back svg{display:block;}
+    .cal-title{flex:1;min-width:0;font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
+    .legend-row{display:flex;align-items:center;gap:var(--sp-m);}
+    .legend-main{display:flex;align-items:center;gap:var(--sp-m);flex:1;min-width:0;}
+    .chip{background:var(--surface-success);border-radius:var(--radius-m);height:40px;
+      padding:0 var(--sp-s);display:grid;place-items:center;flex-shrink:0;
+      font-size:16px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums;}
+    .legend-txt{font-size:14px;line-height:20px;}
+    .info-ico{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--surface-primary);
+      color:#fff;font:italic 700 14px Georgia,serif;display:grid;place-items:center;}
+    .disclaimer{font-size:14px;line-height:20px;padding:0 var(--sp-m) var(--sp-m);
+      background:var(--surface-white);border-bottom:1px solid var(--stroke-primary);}
+    .disclaimer[hidden]{display:none;}
+    .weekdays{display:flex;gap:var(--sp-xs);}
+    .weekdays span{flex:1;min-width:0;text-align:center;font-size:14px;line-height:20px;}
+
+    .months{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:var(--sp-m);}
+    .month{padding:var(--sp-xl) var(--sp-m) 0;}
+    .month h2{margin:0 0 var(--sp-m);font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
+    .grid{display:flex;flex-direction:column;gap:var(--sp-xs);}
+    .week{display:flex;gap:var(--sp-xs);align-items:center;}
+    .day{flex:1;min-width:0;height:40px;border-radius:var(--radius-m);
+      display:grid;place-items:center;font-size:16px;line-height:24px;font-weight:600;
+      font-variant-numeric:tabular-nums;transition:background .12s;}
+    .day.empty{pointer-events:none;}
+    .day.past{color:#b2bdc5;pointer-events:none;}
+    .day.cheap{background:var(--surface-success);}
+    .day.sel{background:var(--surface-primary);color:var(--text-white);}
+
+    .cal-foot{flex-shrink:0;border-top:1px solid var(--stroke-primary);background:var(--surface-white);
+      padding:var(--sp-m) var(--sp-m) calc(var(--sp-m) + env(safe-area-inset-bottom));
+      display:flex;flex-direction:column;gap:var(--sp-s);}
+    .range-txt{font-size:16px;line-height:24px;font-weight:600;}
+
+    /* ---------- City picker ---------- */
+    #screenCity{background:var(--surface-white);}
+    .city-head{padding:var(--sp-xl) var(--sp-m) var(--sp-m);display:flex;align-items:center;gap:var(--sp-m);
+      border-bottom:1px solid var(--stroke-primary);flex-shrink:0;}
+    .city-input{flex:1;min-width:0;border:1px solid var(--stroke-primary);border-radius:var(--radius-m);
+      padding:var(--sp-xs) var(--sp-s);font-size:16px;line-height:24px;font-family:inherit;color:inherit;}
+    .city-input:focus{outline:2px solid var(--surface-primary);outline-offset:-2px;}
+    .city-list{flex:1;overflow-y:auto;}
+    .city-item{display:block;width:100%;text-align:left;padding:var(--sp-s) var(--sp-m);
+      font-size:16px;line-height:24px;border-bottom:1px solid var(--surface-quinary);}
+    .city-item b{font-weight:700;}
+    .city-item .code{color:var(--text-muted);font-size:14px;margin-left:6px;}
+
+    /* ---------- Passengers sheet ---------- */
+    .sheet-backdrop{position:fixed;inset:0;background:rgba(0,34,62,.45);z-index:40;display:none;}
+    .sheet-backdrop.open{display:block;}
+    .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface-white);
+      border-radius:var(--radius-l) var(--radius-l) 0 0;padding:var(--sp-xl) var(--sp-m)
+      calc(var(--sp-m) + env(safe-area-inset-bottom));max-width:430px;margin:0 auto;}
+    .sheet h3{margin:0 0 var(--sp-m);font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
+    .pax-row{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-s) 0;}
+    .pax-row .t{font-size:16px;font-weight:600;}
+    .pax-row .s{font-size:14px;color:var(--text-muted);}
+    .stepper{display:flex;align-items:center;gap:var(--sp-m);}
+    .stepper button{width:36px;height:36px;border-radius:50%;border:1px solid var(--stroke-primary);
+      display:grid;place-items:center;font-size:20px;font-weight:700;line-height:1;}
+    .stepper button:disabled{opacity:.35;}
+    .stepper .n{min-width:20px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;}
+    .cabins{display:flex;flex-wrap:wrap;gap:var(--sp-xs);margin:var(--sp-xs) 0 var(--sp-m);}
+    .cabins button{padding:8px 12px;border-radius:var(--radius-full);border:1px solid var(--stroke-primary);
+      font-size:14px;font-weight:600;}
+    .cabins button[aria-pressed="true"]{background:var(--surface-primary);color:var(--text-white);
+      border-color:var(--surface-primary);}
+
+    /* ---------- Toast ---------- */
+    .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;
+      background:var(--surface-primary);color:var(--text-white);padding:12px 20px;border-radius:var(--radius-m);
+      font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;max-width:88vw;text-align:center;}
+    .toast.show{opacity:1;}
+
+    /* ---------- Behaviour switch (preview only — removed in test builds) ---------- */
+    .mode-switch{position:fixed;left:12px;bottom:12px;z-index:1000;display:flex;flex-direction:column;
+      gap:6px;align-items:flex-start;}
+    .mode-switch .ms-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+      color:#fff;background:rgba(0,34,62,.6);padding:2px 6px;border-radius:4px;}
+    .mode-switch .ms-tabs{display:inline-flex;background:var(--surface-white);border:1px solid var(--stroke-primary);
+      border-radius:999px;padding:3px;box-shadow:var(--shadow-s);}
+    .mode-switch button{font-weight:600;font-size:12px;line-height:1;color:var(--text-muted);
+      padding:8px 12px;border-radius:999px;}
+    .mode-switch button[aria-pressed="true"]{background:var(--surface-primary);color:var(--text-white);}
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SCREEN: HOME ============ -->
+  <section class="screen active" id="screenHome">
+    <div class="nav-top">
+      <span class="logo"><svg class="logo-svg" viewBox="0 0 75 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.2731 5.78612H14.0862C14.8659 5.78612 15.4961 5.13917 15.4961 4.34486V1.44841C15.4961 0.654469 14.8659 0 14.0862 0H11.2731C10.4929 0 9.86319 0.654469 9.86319 1.44841V4.34486C9.86319 5.13917 10.4995 5.78612 11.2731 5.78612ZM32.409 5.78612H29.5883C28.8162 5.78612 28.1782 5.13917 28.1782 4.34486V1.44841C28.1782 0.654469 28.8162 0 29.5883 0H32.409C33.1818 0 33.8107 0.654469 33.8107 1.44841V4.34486C33.8107 5.13917 33.1818 5.78612 32.409 5.78612ZM23.9489 17.3575V2.89652C23.9489 2.0947 23.3187 1.44829 22.5454 1.44829H18.3156V18.8057C18.3156 21.9969 20.8485 24.5988 23.9489 24.5988H28.178V18.8057H25.3581C24.5848 18.8057 23.9489 18.1597 23.9489 17.3575ZM28.1782 7.23417H29.5883C32.6954 7.23417 35.2221 9.83647 35.2221 13.0273V24.5988H30.9989C30.2185 24.5988 29.5883 23.9449 29.5883 23.1504V14.4755C29.5883 13.674 28.9518 13.0273 28.1782 13.0273V7.23417ZM47.8976 7.23417H36.6318V18.8057C36.6318 21.9968 39.1593 24.5988 42.2577 24.5988H47.8976C47.8976 25.3931 47.2608 26.0399 46.4876 26.0399H43.6676C42.8952 26.0399 42.2577 26.694 42.2577 27.4883V31.8329H47.8976C51.0034 31.8329 53.5303 29.231 53.5303 26.0399V13.0273C53.5303 9.83647 51.0034 7.23417 47.8976 7.23417ZM47.8974 18.8058H43.6674C42.895 18.8058 42.2575 18.1597 42.2575 17.3575V13.0273H46.4874C47.2606 13.0273 47.8974 13.6741 47.8974 14.4756V18.8058ZM61.9832 18.8058H66.2132V14.4756C66.2132 13.6741 65.5835 13.0273 64.8032 13.0273H60.5802V17.3575C60.5802 18.1597 61.2101 18.8058 61.9832 18.8058ZM60.5802 7.23417C57.4743 7.23417 54.9403 9.83647 54.9403 13.0273V18.8057C54.9403 21.9968 57.4743 24.5988 60.5802 24.5988H66.2132C69.3192 24.5988 71.8463 21.9968 71.8463 18.8057V13.0273H73.2562C74.0365 13.0273 74.6661 12.3732 74.6661 11.5788V7.23417H60.5802ZM9.86319 7.23417H11.2731C14.3722 7.23417 16.9057 9.83647 16.9057 13.0273V24.5988H12.6831C11.9035 24.5988 11.2731 23.9449 11.2731 23.1504V14.4755C11.2731 13.674 10.636 13.0273 9.86319 13.0273V7.23417ZM5.63241 17.3575V2.89652C5.63241 2.0947 5.0031 1.44829 4.23033 1.44829H0V18.8057C0 21.9969 2.53349 24.5988 5.63241 24.5988H9.86292V18.8057H7.04288C6.27011 18.8057 5.63241 18.1597 5.63241 17.3575ZM56.1698 31.8655H54.9449V30.3786H56.1698V31.8655ZM59.4542 28.5866C59.4542 28.0908 59.3614 27.5571 58.879 27.5571C58.2481 27.5571 58.146 28.1291 58.146 29.3107C58.146 30.5782 58.2573 31.1027 58.8328 31.1027C59.2594 31.1027 59.4542 30.7307 59.4542 29.9017H60.6789C60.6789 31.2455 60.1315 31.9986 58.7769 31.9986C57.4965 31.9986 56.8654 31.36 56.8654 29.3013C56.8654 27.1952 57.7099 26.6043 58.8883 26.6043C60.0668 26.6043 60.6789 27.376 60.6789 28.5866H59.4542ZM63.7868 29.3015C63.7868 30.5783 63.6197 31.1027 63.1002 31.1027C62.4692 31.1027 62.4136 30.3496 62.4136 29.3015C62.4136 28.2529 62.4692 27.5002 63.1002 27.5002C63.6197 27.5002 63.7868 28.0242 63.7868 29.3015ZM63.1006 26.6049C64.641 26.5763 65.0677 27.5198 65.0677 29.3022C65.0677 31.0557 64.5667 31.9994 63.1006 31.9994C61.5602 32.0276 61.1336 31.0843 61.1336 29.3022C61.1336 27.5486 61.6345 26.6049 63.1006 26.6049ZM66.9323 26.7379H65.7078V31.8653H66.9882V28.4915C66.9882 27.9006 67.248 27.6145 67.6562 27.6145C68.0181 27.6145 68.1574 27.8529 68.1574 28.2818V31.8653H69.4376V28.4915C69.4376 27.9006 69.6974 27.6145 70.1057 27.6145C70.4677 27.6145 70.6069 27.8529 70.6069 28.2818V31.8653H71.8873V28.1387C71.8873 27.1473 71.4883 26.6043 70.6438 26.6043C70.0407 26.6043 69.577 26.8807 69.382 27.4241H69.3634C69.2242 26.8997 68.7974 26.6043 68.2129 26.6043C67.6746 26.6043 67.2758 26.7949 66.9511 27.2619H66.9323V26.7379Z" fill="#C9EE00"/></svg></span>
+      <span class="lang">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/></svg>
+        EN
+      </span>
+    </div>
+
+    <nav class="cat-tabs">
+      <button class="cat" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5L21 16Z"/></svg>
+        Flights
+      </button>
+      <button class="cat">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4 0-8 .5-8 4v9.5A3.5 3.5 0 0 0 7.5 19L6 20.5v.5h12v-.5L16.5 19a3.5 3.5 0 0 0 3.5-3.5V6c0-3.5-3.6-4-8-4ZM7.5 17a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3.5-7H6V6h5v4Zm2 0V6h5v4h-5Zm3.5 7a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
+        Trains
+      </button>
+      <button class="cat">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 6a1.5 1.5 0 0 0-1.4-1H6.5a1.5 1.5 0 0 0-1.4 1L3 12v8a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h12v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-8l-2.1-6ZM6.5 16A1.5 1.5 0 1 1 8 14.5 1.5 1.5 0 0 1 6.5 16Zm11 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5ZM5 11l1.5-4.5h11L19 11H5Z"/></svg>
+        Cars
+      </button>
+      <button class="cat">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 13a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm12-1h-8v6H3V5H1v16h2v-3h18v3h2v-7a5 5 0 0 0-4-4.9Z"/></svg>
+        Hotels
+      </button>
+    </nav>
+
+    <h1 class="hero">Cheap flights: compare airline tickets and find the best deal</h1>
+
+    <div class="search-card">
+      <div class="trip-toggle" role="group" aria-label="Trip type">
+        <button type="button" data-trip="round" aria-pressed="true">Round-trip</button>
+        <button type="button" data-trip="oneway" aria-pressed="false">One-way</button>
+      </div>
+
+      <div class="fields">
+        <div class="loc-group">
+          <button class="field" id="fromField" type="button">
+            <span class="lbl">Where from?</span>
+            <span class="val" id="fromVal">Paris, France</span>
+          </button>
+          <div class="loc-divider"></div>
+          <button class="field" id="toField" type="button">
+            <span class="lbl">Where to?</span>
+            <span class="val" id="toVal">Barcelona, Spain</span>
+          </button>
+          <button class="swap" id="swap" type="button" aria-label="Swap origin and destination">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v14M6 3 3 6M6 3l3 3M14 17V3M14 17l-3-3M14 17l3-3"/></svg>
+          </button>
+        </div>
+
+        <div class="row2">
+          <button class="field" id="datesField" type="button">
+            <span class="lbl">Dates</span>
+            <span class="val" id="datesVal">Jul 25 - Jul 29</span>
+          </button>
+          <button class="field" id="paxField" type="button">
+            <span class="lbl">Passengers &amp; Seat…</span>
+            <span class="val" id="paxVal">1, Premium Eco…</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="nonstop" id="nonstop" type="button" role="checkbox" aria-checked="false">
+        <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>
+        <span class="txt">Direct flights</span>
+      </button>
+
+      <button class="cta" id="compare" type="button">Compare</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: CALENDAR ============ -->
+  <section class="screen" id="screenCal">
+    <div class="cal-head">
+      <div class="cal-title-row">
+        <button class="back" id="calBack" type="button" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+        </button>
+        <h2 class="cal-title">Select your travel dates</h2>
+      </div>
+      <div class="legend-row">
+        <div class="legend-main">
+          <span class="chip" id="legendChip">&lt;200 €</span>
+          <span class="legend-txt">Highlighted days are cheaper by ~15%</span>
+        </div>
+        <button class="info-ico" id="infoBtn" type="button" aria-label="More information" aria-expanded="false">i</button>
+      </div>
+      <div class="weekdays" id="weekdays"></div>
+    </div>
+
+    <p class="disclaimer" id="disclaimer" hidden></p>
+
+    <div class="months" id="months"></div>
+
+    <div class="cal-foot">
+      <span class="range-txt" id="rangeTxt"></span>
+      <button class="cta" id="setDates" type="button">Set dates</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: CITY PICKER ============ -->
+  <section class="screen" id="screenCity">
+    <div class="city-head">
+      <button class="back" id="cityBack" type="button" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+      </button>
+      <input class="city-input" id="cityInput" type="text" autocomplete="off" placeholder="City, airport, train station" />
+    </div>
+    <div class="city-list" id="cityList"></div>
+  </section>
+
+  <!-- ============ Passengers sheet ============ -->
+  <div class="sheet-backdrop" id="paxBackdrop">
+    <div class="sheet" id="paxSheet" role="dialog" aria-label="Passengers and seat class">
+      <h3>Passengers &amp; Seat class</h3>
+      <div id="paxRows"></div>
+      <div class="cabins" id="cabins"></div>
+      <button class="cta" id="paxDone" type="button">Done</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!--MODE_SWITCH_START-->
+<div class="mode-switch" role="group" aria-label="Calendar behaviour">
+  <span class="ms-label">Calendar behaviour</span>
+  <div class="ms-tabs">
+    <button type="button" data-behavior="static" aria-pressed="true" title="Green never changes as you pick dates">V1 · Static</button>
+    <button type="button" data-behavior="separate" aria-pressed="false" title="Green follows the field you're editing">V2 · Separate</button>
+  </div>
+</div>
+<!--MODE_SWITCH_END-->
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  /* ---------- Data ---------- */
+  const CITIES = [
+    { label:'Paris, France', code:'CDG' },
+    { label:'Barcelona, Spain', code:'BCN' },
+    { label:'Madrid, Spain', code:'MAD' },
+    { label:'London, United Kingdom', code:'LON' },
+    { label:'Rome, Italy', code:'FCO' },
+    { label:'Milan, Italy', code:'MXP' },
+    { label:'Berlin, Germany', code:'BER' },
+    { label:'Amsterdam, Netherlands', code:'AMS' },
+    { label:'Lisbon, Portugal', code:'LIS' },
+    { label:'Budapest, Hungary', code:'BUD' },
+    { label:'Agadir, Morocco', code:'AGA' },
+    { label:'Marrakesh, Morocco', code:'RAK' },
+    { label:'Casablanca, Morocco', code:'CMN' },
+    { label:'New York, United States', code:'JFK' },
+    { label:'Dubai, United Arab Emirates', code:'DXB' },
+    { label:'Tokyo, Japan', code:'HND' },
+  ];
+  const CABINS = ['Economy','Premium economy','Business','First class'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const MONTHS_SHOWN = 12;
+
+  /* ---------- Helpers ---------- */
+  function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function sameDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+  function addMonths(d,n){ return new Date(d.getFullYear(), d.getMonth()+n, 1); }
+  function esc(s){ return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+  function boldMatch(text,q){
+    if(!q) return esc(text);
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if(i<0) return esc(text);
+    return esc(text.slice(0,i))+'<b>'+esc(text.slice(i,i+q.length))+'</b>'+esc(text.slice(i+q.length));
+  }
+
+  /* ---------- State ---------- */
+  const state = {
+    behavior: 'static',                // 'static' (V1) | 'separate' (V2)
+    tripType:'round',
+    departure:new Date(2026,6,25),     // preselected 4-day trip: Sat, Jul 25 …
+    return:new Date(2026,6,29),        // … → Wed, Jul 29
+    activeField:'departure',
+    minDate:startOfDay(new Date(2026,6,22)),
+    viewStart:new Date(2026,6,1),      // calendar opens on July 2026
+    from:{ label:'Paris, France', code:'CDG' },
+    to:{ label:'Barcelona, Spain', code:'BCN' },
+    pax:{ adults:1, children:0, infants:0, cabin:'Premium economy' },
+    nonstop:false,
+    cityTarget:null,                   // 'from' | 'to'
+  };
+
+  /* ---------- Pricing (identical model to the desktop build) ---------- */
+  const SEASON = [185,168,190,215,250,300,345,335,240,205,178,295];
+  function priceFor(d){
+    const seed = (d.getFullYear()*372 + d.getMonth()*31 + d.getDate()) * 2654435761 % 2147483647;
+    const r = (Math.abs(seed) % 1000) / 1000;
+    const weekend = (d.getDay()===5 || d.getDay()===6) ? 45 : 0;
+    return Math.round(SEASON[d.getMonth()] + r*90 + weekend);
+  }
+  // Return-flight price depends on BOTH the chosen departure and the candidate return,
+  // so the cheapest set shifts once a departure is picked — the V2 dynamic behaviour.
+  function priceForReturn(dep,d){
+    const depSeed = dep.getMonth()*53 + dep.getDate()*17;
+    const seed = ((d.getFullYear()*372 + d.getMonth()*31 + d.getDate()) * 2654435761 + depSeed*40503) % 2147483647;
+    const r = (Math.abs(seed) % 1000) / 1000;
+    const tripLen = Math.round((d - dep) / 86400000);
+    const lenPenalty = Math.abs(tripLen - 7) * 5;
+    const weekend = (d.getDay()===5 || d.getDay()===6) ? 55 : 0;
+    return Math.round(150 + r*150 + lenPenalty + weekend);
+  }
+  function useReturnPricing(){
+    return (state.tripType==='round' && state.departure) &&
+           (state.behavior==='separate' && state.activeField==='return');
+  }
+  function cheapDaysForMonth(base){
+    const year=base.getFullYear(), month=base.getMonth();
+    const days=new Date(year,month+1,0).getDate();
+    const useReturns=useReturnPricing();
+    const arr=[];
+    for(let d=1; d<=days; d++){
+      const date=new Date(year,month,d);
+      if(date < state.minDate) continue;              // never highlight past days
+      if(useReturns){
+        if(date <= state.departure) continue;         // a return must be after the departure
+        arr.push({ d, p:priceForReturn(state.departure,date) });
+      } else {
+        arr.push({ d, p:priceFor(date) });
+      }
+    }
+    if(!arr.length) return { set:new Set(), max:null };
+    arr.sort((a,b)=> a.p-b.p || a.d-b.d);
+    const seed=(year*31+month)>>>0;
+    const count=8+(seed%3);                           // deterministic 8..10 per month
+    const picked=arr.slice(0,Math.min(count,arr.length));
+    return { set:new Set(picked.map(x=>x.d)), max:picked[picked.length-1].p };
+  }
+
+  /* ---------- Formatting ---------- */
+  function fmtShort(d){ return d ? MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate() : ''; }
+  function fmtLong(d){ return d ? DOW[d.getDay()]+', '+MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate() : ''; }
+  function paxCount(){ return state.pax.adults + state.pax.children + state.pax.infants; }
+  function paxText(){
+    const n=paxCount();
+    return n+', '+state.pax.cabin;
+  }
+  function rangeText(){
+    const d=state.departure, r=(state.tripType==='round')?state.return:null;
+    if(d&&r) return fmtLong(d)+' - '+fmtLong(r);
+    if(d) return fmtLong(d);
+    return 'Select your dates';
+  }
+
+  /* ---------- Screens ---------- */
+  function show(id){
+    document.querySelectorAll('.screen').forEach(s=> s.classList.toggle('active', s.id===id));
+    window.scrollTo(0,0);
+  }
+
+  /* ---------- Home fields ---------- */
+  function syncHome(){
+    $('fromVal').textContent = state.from ? state.from.label : 'City, airport, train station';
+    $('fromVal').classList.toggle('placeholder', !state.from);
+    $('toVal').textContent = state.to ? state.to.label : 'City, airport, train station';
+    $('toVal').classList.toggle('placeholder', !state.to);
+    const d=state.departure, r=(state.tripType==='round')?state.return:null;
+    $('datesVal').textContent = d ? (r ? fmtShort(d)+' - '+fmtShort(r) : fmtShort(d)) : 'Select';
+    $('paxVal').textContent = paxText();
+  }
+
+  /* ---------- Calendar ---------- */
+  function renderWeekdays(){
+    $('weekdays').innerHTML = WEEKDAYS.map(w=>'<span>'+w+'</span>').join('');
+  }
+  function renderCalendar(){
+    const host=$('months'); host.innerHTML='';
+    let chipMax=null;
+    // the month the user is working in drives the legend chip
+    const focus = state.departure || state.viewStart;
+
+    for(let i=0;i<MONTHS_SHOWN;i++){
+      const base=addMonths(state.viewStart,i);
+      const y=base.getFullYear(), m=base.getMonth();
+      const {set:cheap, max} = cheapDaysForMonth(base);
+      if(y===focus.getFullYear() && m===focus.getMonth()) chipMax=max;
+
+      const sec=document.createElement('section'); sec.className='month';
+      const h=document.createElement('h2'); h.textContent=MONTHS[m]+' '+y; sec.appendChild(h);
+
+      const grid=document.createElement('div'); grid.className='grid';
+      const first=new Date(y,m,1);
+      const lead=(first.getDay()+6)%7;                 // Monday-first
+      const days=new Date(y,m+1,0).getDate();
+      let week=document.createElement('div'); week.className='week';
+      for(let k=0;k<lead;k++){ const e=document.createElement('div'); e.className='day empty'; week.appendChild(e); }
+      for(let d=1; d<=days; d++){
+        const date=new Date(y,m,d);
+        const past=date<state.minDate;
+        const isSel=sameDay(date,state.departure)||(state.tripType==='round'&&sameDay(date,state.return));
+        const isCheap=cheap.has(d)&&!isSel;
+        const cell=document.createElement('button');
+        cell.type='button';
+        cell.className='day'+(past?' past':'')+(isCheap?' cheap':'')+(isSel?' sel':'');
+        cell.textContent=d;
+        if(!past) cell.addEventListener('click',()=>pick(date));
+        week.appendChild(cell);
+        if(week.children.length===7){ grid.appendChild(week); week=document.createElement('div'); week.className='week'; }
+      }
+      if(week.children.length){
+        while(week.children.length<7){ const e=document.createElement('div'); e.className='day empty'; week.appendChild(e); }
+        grid.appendChild(week);
+      }
+      sec.appendChild(grid); host.appendChild(sec);
+    }
+
+    if(chipMax==null){ const f=cheapDaysForMonth(state.viewStart); chipMax=f.max; }
+    $('legendChip').textContent = chipMax!=null ? '<'+(Math.ceil(chipMax/10)*10)+' €' : '—';
+    $('rangeTxt').textContent = rangeText();
+    renderDisclaimer();
+  }
+  function renderDisclaimer(){
+    const el=$('disclaimer');
+    el.innerHTML = (state.behavior==='separate')
+      ? '<b>Green updates as you go:</b> cheapest days to set off, then the cheapest dates to return.'
+      : 'The best-value roundtrip days are in green. Pick what fits your plans and travel for less.';
+  }
+  function pick(date){
+    if(state.tripType==='oneway'){
+      state.departure=date; state.return=null; state.activeField='departure';
+      renderCalendar(); return;
+    }
+    if(state.activeField==='departure'){
+      state.departure=date; state.return=null; state.activeField='return';
+    } else {
+      if(date < state.departure){ state.departure=date; state.return=null; state.activeField='return'; }
+      else { state.return=date; state.activeField='departure'; }
+    }
+    renderCalendar();
+  }
+
+  /* ---------- City picker ---------- */
+  function openCity(target){
+    state.cityTarget=target;
+    $('cityInput').value='';
+    renderCityList('');
+    show('screenCity');
+    setTimeout(()=>$('cityInput').focus(),50);
+  }
+  function renderCityList(q){
+    const list=CITIES.filter(c=> !q || c.label.toLowerCase().includes(q.toLowerCase()) || c.code.toLowerCase().includes(q.toLowerCase()));
+    $('cityList').innerHTML = list.map(c=>
+      '<button class="city-item" type="button" data-code="'+c.code+'">'+boldMatch(c.label,q)+'<span class="code">'+c.code+'</span></button>'
+    ).join('') || '<div class="city-item" style="color:var(--text-muted)">No matches</div>';
+    $('cityList').querySelectorAll('.city-item[data-code]').forEach(b=>{
+      b.addEventListener('click',()=>{
+        const city=CITIES.find(c=>c.code===b.dataset.code);
+        if(state.cityTarget==='from') state.from=city; else state.to=city;
+        syncHome(); show('screenHome');
+      });
+    });
+  }
+
+  /* ---------- Passengers ---------- */
+  function renderPax(){
+    const rows=[
+      { key:'adults', t:'Adults', s:'12+ years', min:1 },
+      { key:'children', t:'Children', s:'2–11 years', min:0 },
+      { key:'infants', t:'Infants', s:'Under 2', min:0 },
+    ];
+    $('paxRows').innerHTML = rows.map(r=>
+      '<div class="pax-row"><div><div class="t">'+r.t+'</div><div class="s">'+r.s+'</div></div>'+
+      '<div class="stepper"><button type="button" data-k="'+r.key+'" data-v="-1">−</button>'+
+      '<span class="n">'+state.pax[r.key]+'</span>'+
+      '<button type="button" data-k="'+r.key+'" data-v="1">+</button></div></div>'
+    ).join('');
+    $('paxRows').querySelectorAll('button').forEach(b=>{
+      const k=b.dataset.k, v=+b.dataset.v, min=rows.find(r=>r.key===k).min;
+      if(v<0 && state.pax[k]<=min) b.disabled=true;
+      if(v>0 && paxCount()>=9) b.disabled=true;
+      b.addEventListener('click',()=>{ state.pax[k]=Math.max(min,state.pax[k]+v); renderPax(); });
+    });
+    $('cabins').innerHTML = CABINS.map(c=>
+      '<button type="button" aria-pressed="'+(c===state.pax.cabin)+'">'+c+'</button>'
+    ).join('');
+    $('cabins').querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click',()=>{ state.pax.cabin=b.textContent; renderPax(); });
+    });
+  }
+  function openPax(){ renderPax(); $('paxBackdrop').classList.add('open'); }
+  function closePax(){ $('paxBackdrop').classList.remove('open'); syncHome(); }
+
+  /* ---------- Toast ---------- */
+  let toastT=null;
+  function toast(msg){
+    const t=$('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400);
+  }
+
+  /* ---------- Wiring ---------- */
+  document.querySelectorAll('.trip-toggle button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      state.tripType=b.dataset.trip;
+      document.querySelectorAll('.trip-toggle button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+      if(state.tripType==='oneway') state.return=null;
+      else if(!state.return && state.departure){
+        const d=state.departure; state.return=new Date(d.getFullYear(),d.getMonth(),d.getDate()+4);
+      }
+      state.activeField='departure';
+      syncHome();
+    });
+  });
+  document.querySelectorAll('.cat-tabs .cat').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.cat-tabs .cat').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+      if(b.getAttribute('aria-pressed')==='true' && !/Flights/.test(b.textContent)) toast('Prototype — only Flights is available');
+    });
+  });
+  $('fromField').addEventListener('click',()=>openCity('from'));
+  $('toField').addEventListener('click',()=>openCity('to'));
+  $('swap').addEventListener('click',()=>{ const t=state.from; state.from=state.to; state.to=t; syncHome(); });
+  $('cityBack').addEventListener('click',()=>show('screenHome'));
+  $('cityInput').addEventListener('input',e=>renderCityList(e.target.value.trim()));
+
+  $('datesField').addEventListener('click',()=>{
+    state.activeField='departure';
+    renderCalendar();
+    show('screenCal');
+  });
+  $('calBack').addEventListener('click',()=>{ syncHome(); show('screenHome'); });
+  $('setDates').addEventListener('click',()=>{
+    if(state.tripType==='round' && state.departure && !state.return){
+      const d=state.departure; state.return=new Date(d.getFullYear(),d.getMonth(),d.getDate()+4);
+    }
+    syncHome(); show('screenHome');
+  });
+  $('infoBtn').addEventListener('click',()=>{
+    const el=$('disclaimer'), open=el.hasAttribute('hidden');
+    if(open){ el.removeAttribute('hidden'); } else { el.setAttribute('hidden',''); }
+    $('infoBtn').setAttribute('aria-expanded',String(open));
+  });
+
+  $('paxField').addEventListener('click',openPax);
+  $('paxDone').addEventListener('click',closePax);
+  $('paxBackdrop').addEventListener('click',e=>{ if(e.target===$('paxBackdrop')) closePax(); });
+
+  $('nonstop').addEventListener('click',()=>{
+    state.nonstop=!state.nonstop;
+    $('nonstop').setAttribute('aria-checked',String(state.nonstop));
+  });
+  $('compare').addEventListener('click',()=>toast('Prototype — this is where results would load'));
+
+  /* ---- Calendar-behaviour switch (preview only; removed in the test builds) ---- */
+  document.querySelectorAll('.mode-switch button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      state.behavior=b.dataset.behavior;
+      document.querySelectorAll('.mode-switch button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+      // every version restarts from the same preselected 4-day trip
+      state.departure=new Date(2026,6,25);
+      state.return=new Date(2026,6,29);
+      state.activeField='departure';
+      syncHome();
+      if($('screenCal').classList.contains('active')) renderCalendar();
+    });
+  });
+
+  /* ---------- Init ---------- */
+  renderWeekdays();
+  renderDisclaimer();
+  syncHome();
+</script>
+</body>
+</html>
