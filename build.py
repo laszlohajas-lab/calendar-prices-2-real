@@ -27,12 +27,22 @@ def main():
     if "behavior: 'static'," not in base:
         sys.exit("ERROR: couldn't find the behaviour default in index.html")
 
+    # Useberry "Live Website" tracking snippet — injected into the test builds only,
+    # not into the master source (index.html stays product-clean).
+    USEBERRY = '<script type="text/javascript" src="https://api.useberry.com/integrations/liveUrl/scripts/useberryScript.js"></script>'
+    def inject(html):
+        if "useberryScript.js" in html:
+            return html
+        if "</body>" not in html:
+            sys.exit("ERROR: no </body> tag to inject the Useberry snippet before")
+        return html.replace("</body>", "  " + USEBERRY + "\n</body>", 1)
+
     os.makedirs(OUT, exist_ok=True)
     # Variant A: Static (default already 'static')
-    open(os.path.join(OUT, "version-a.html"), "w", encoding="utf-8").write(base)
+    open(os.path.join(OUT, "version-a.html"), "w", encoding="utf-8").write(inject(base))
     # Variant B: Dynamic ('separate')
     open(os.path.join(OUT, "version-b.html"), "w", encoding="utf-8").write(
-        base.replace("behavior: 'static',", "behavior: 'separate',", 1))
+        inject(base.replace("behavior: 'static',", "behavior: 'separate',", 1)))
     # private reference landing
     open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
