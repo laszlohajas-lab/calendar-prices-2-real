@@ -49,6 +49,9 @@
     /* ---------- Screens ---------- */
     .screen{display:none;flex-direction:column;min-height:100dvh;}
     .screen.active{display:flex;}
+    /* Calendar & city picker are fixed-height app shells: header and footer are
+       pinned, only the middle region scrolls. min-height:0 lets the flex child scroll. */
+    #screenCal,#screenCity{height:100dvh;max-height:100dvh;overflow:hidden;}
 
     /* ---------- HOME ---------- */
     #screenHome{background:var(--surface-primary);}
@@ -88,10 +91,13 @@
       width:40px;height:40px;border-radius:var(--radius-m);background:var(--surface-white);
       box-shadow:var(--shadow-s);display:grid;place-items:center;}
     .swap svg{display:block;width:20px;height:20px;}
-    .row2{display:flex;gap:var(--sp-xs);}
+    /* Dates / Passengers: px 12, py 8, label 14/20 + value 16/24 => 62px tall (Figma 2669:24091).
+       Both label and value are clipped to one line so the two boxes always match height. */
+    .row2{display:flex;gap:var(--sp-xs);align-items:stretch;}
     .row2 .field{border:1px solid var(--stroke-primary);border-radius:var(--radius-m);
-      padding:var(--sp-xs) var(--sp-s);flex:1;min-width:0;}
-    .row2 .field .val{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+      padding:var(--sp-xs) var(--sp-s);flex:1;min-width:0;justify-content:center;}
+    .row2 .field .lbl,
+    .row2 .field .val{display:block;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .nonstop{display:flex;align-items:center;gap:var(--sp-xs);}
     .nonstop .box{width:24px;height:24px;border:2px solid var(--stroke-primary);border-radius:var(--radius-m);
       flex-shrink:0;display:grid;place-items:center;}
@@ -106,7 +112,7 @@
     #screenCal{background:var(--surface-white);}
     .cal-head{background:var(--surface-white);border-bottom:1px solid var(--stroke-primary);
       padding:var(--sp-xl) var(--sp-m) var(--sp-m);display:flex;flex-direction:column;gap:var(--sp-xl);
-      flex-shrink:0;position:sticky;top:0;z-index:5;}
+      flex-shrink:0;z-index:5;}
     .cal-title-row{display:flex;align-items:center;gap:var(--sp-xl);}
     .back{width:24px;height:24px;display:grid;place-items:center;flex-shrink:0;}
     .back svg{display:block;}
@@ -119,13 +125,13 @@
     .legend-txt{font-size:14px;line-height:20px;}
     .info-ico{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--surface-primary);
       color:#fff;font:italic 700 14px Georgia,serif;display:grid;place-items:center;}
-    .disclaimer{font-size:14px;line-height:20px;padding:0 var(--sp-m) var(--sp-m);
-      background:var(--surface-white);border-bottom:1px solid var(--stroke-primary);}
+    .disclaimer{font-size:14px;line-height:20px;padding:0 var(--sp-m) var(--sp-m);margin:0;
+      background:var(--surface-white);border-bottom:1px solid var(--stroke-primary);flex-shrink:0;}
     .disclaimer[hidden]{display:none;}
     .weekdays{display:flex;gap:var(--sp-xs);}
     .weekdays span{flex:1;min-width:0;text-align:center;font-size:14px;line-height:20px;}
 
-    .months{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:var(--sp-m);}
+    .months{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:var(--sp-m);}
     .month{padding:var(--sp-xl) var(--sp-m) 0;}
     .month h2{margin:0 0 var(--sp-m);font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
     .grid{display:flex;flex-direction:column;gap:var(--sp-xs);}
@@ -138,10 +144,11 @@
     .day.cheap{background:var(--surface-success);}
     .day.sel{background:var(--surface-primary);color:var(--text-white);}
 
+    /* Sticky footer: pt 16 / pb 24 / px 16, gap 12 (Figma 2669:24249) */
     .cal-foot{flex-shrink:0;border-top:1px solid var(--stroke-primary);background:var(--surface-white);
-      padding:var(--sp-m) var(--sp-m) calc(var(--sp-m) + env(safe-area-inset-bottom));
-      display:flex;flex-direction:column;gap:var(--sp-s);}
-    .range-txt{font-size:16px;line-height:24px;font-weight:600;}
+      padding:var(--sp-m) var(--sp-m) calc(var(--sp-xl) + env(safe-area-inset-bottom));
+      display:flex;flex-direction:column;justify-content:flex-end;gap:var(--sp-s);}
+    .range-txt{font-size:16px;line-height:24px;font-weight:600;width:100%;}
 
     /* ---------- City picker ---------- */
     #screenCity{background:var(--surface-white);}
@@ -150,7 +157,7 @@
     .city-input{flex:1;min-width:0;border:1px solid var(--stroke-primary);border-radius:var(--radius-m);
       padding:var(--sp-xs) var(--sp-s);font-size:16px;line-height:24px;font-family:inherit;color:inherit;}
     .city-input:focus{outline:2px solid var(--surface-primary);outline-offset:-2px;}
-    .city-list{flex:1;overflow-y:auto;}
+    .city-list{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
     .city-item{display:block;width:100%;text-align:left;padding:var(--sp-s) var(--sp-m);
       font-size:16px;line-height:24px;border-bottom:1px solid var(--surface-quinary);}
     .city-item b{font-weight:700;}
