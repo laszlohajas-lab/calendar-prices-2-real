@@ -461,17 +461,47 @@
   }
 
   /* ---------- Screens ---------- */
+  /* Hash routing.
+     Each screen has a real URL so it survives a page reload and can be linked
+     to directly. This matters for test tooling (Useberry): without it, any
+     reload of the frame silently resets the prototype to the home screen, so a
+     click recorded on the calendar actually lands on "#screenHome".
+       #/search  home / search form
+       #/dates   calendar (date picker)
+       #/city    city picker
+     Deep links: append the hash to the page URL, e.g. …/mobile-a.html#/dates */
+  const ROUTE_OF  = { screenHome:'#/search', screenCal:'#/dates', screenCity:'#/city' };
+  const SCREEN_OF = { '#/search':'screenHome', '#/dates':'screenCal', '#/city':'screenCity',
+                      // Confirming the calendar lands on a DISTINCT url that still renders the
+                      // search form. Gives the test tool an unambiguous completion signal:
+                      // "task complete when the URL contains #/dates-set".
+                      '#/dates-set':'screenHome' };
+
   function show(id){
     document.querySelectorAll('.screen').forEach(s=> s.classList.toggle('active', s.id===id));
     window.scrollTo(0,0);
   }
-  // Screen swaps are deferred one beat so analytics / task-trigger recorders
-  // (Useberry) resolve the element that was ACTUALLY clicked. Swapping screens
-  // synchronously removes the button from the DOM before the event finishes
-  // bubbling, so the trigger binds to the incoming screen (e.g. "#screenHome")
-  // instead of the button. 160ms is imperceptible but enough to capture.
+  // Screen swaps are deferred one beat so click/trigger recorders resolve the
+  // element that was actually clicked before the DOM swaps screens.
   const NAV_DELAY = 160;
-  function navTo(id){ setTimeout(()=>show(id), NAV_DELAY); }
+  function navHash(h){
+    setTimeout(()=>{
+      if(location.hash === h) applyRoute();      // same route → just re-render
+      else location.hash = h;                    // otherwise hashchange drives it
+    }, NAV_DELAY);
+  }
+  function navTo(id){ navHash(ROUTE_OF[id] || '#/search'); }
+  function applyRoute(){
+    const id = SCREEN_OF[location.hash] || 'screenHome';
+    if(id==='screenCal'){ renderCalendar(); }
+    if(id==='screenCity'){
+      if(!state.cityTarget) state.cityTarget='from';
+      renderCityList(($('cityInput').value||'').trim());
+    }
+    if(id==='screenHome'){ syncHome(); }
+    show(id);
+  }
+  window.addEventListener('hashchange', applyRoute);
 
   /* ---------- Home fields ---------- */
   function syncHome(){
@@ -639,8 +669,7 @@
 
   $('datesField').addEventListener('click',()=>{
     state.activeField='departure';
-    renderCalendar();
-    navTo('screenCal');
+    navTo('screenCal');            // applyRoute() renders the calendar
   });
   $('calBack').addEventListener('click',()=>{ syncHome(); navTo('screenHome'); });
   // Task-completion trigger for the usability test: bind Useberry to "#setDates".
@@ -648,7 +677,7 @@
     if(state.tripType==='round' && state.departure && !state.return){
       const d=state.departure; state.return=new Date(d.getFullYear(),d.getMonth(),d.getDate()+4);
     }
-    syncHome(); navTo('screenHome');
+    syncHome(); navHash('#/dates-set');   // distinct URL = task-completion signal
   });
   $('infoBtn').addEventListener('click',()=>{
     const el=$('disclaimer'), open=el.hasAttribute('hidden');
@@ -684,6 +713,7 @@
   renderWeekdays();
   renderDisclaimer();
   syncHome();
+  applyRoute();   // honour a deep link (e.g. …#/dates) on first load
 </script>
 </body>
 </html>
