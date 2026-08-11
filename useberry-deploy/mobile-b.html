@@ -120,23 +120,21 @@
     .back{width:24px;height:24px;display:grid;place-items:center;flex-shrink:0;padding:0;}
     .back svg{display:block;width:24px;height:24px;}
     .cal-title{flex:1;min-width:0;font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
-    .legend-row{display:flex;align-items:center;gap:var(--sp-m);}
-    .legend-main{display:flex;align-items:center;gap:var(--sp-m);flex:1;min-width:0;}
+    /* Legend: green chip + caption, 8px apart (Figma 2671:24827) */
+    .legend-row{display:flex;align-items:center;gap:var(--sp-xs);}
     .chip{background:var(--surface-success);border-radius:var(--radius-m);height:40px;
       padding:0 var(--sp-s);display:grid;place-items:center;flex-shrink:0;
       font-size:16px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums;}
     .legend-txt{font-size:14px;line-height:20px;}
-    .info-ico{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--surface-primary);
-      color:#fff;font:italic 700 14px Georgia,serif;display:grid;place-items:center;}
-    .disclaimer{font-size:14px;line-height:20px;padding:0 var(--sp-m) var(--sp-m);margin:0;
-      background:var(--surface-white);border-bottom:1px solid var(--stroke-primary);flex-shrink:0;}
-    .disclaimer[hidden]{display:none;}
     .weekdays{display:flex;gap:var(--sp-xs);}
     .weekdays span{flex:1;min-width:0;text-align:center;font-size:14px;line-height:20px;}
 
-    .months{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:var(--sp-m);}
-    .month{padding:var(--sp-xl) var(--sp-m) 0;}
-    .month h2{margin:0 0 var(--sp-m);font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
+    /* Months: 40px between month blocks, 24px between a month title and its grid
+       (Figma 2671:24831 — months at 40px pitch, grid offset 48 from a 24px title) */
+    .months{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      display:flex;flex-direction:column;gap:40px;padding:var(--sp-xl) 0 var(--sp-m);}
+    .month{padding:0 var(--sp-m);}
+    .month h2{margin:0 0 var(--sp-xl);font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
     .grid{display:flex;flex-direction:column;gap:var(--sp-xs);}
     .week{display:flex;gap:var(--sp-xs);align-items:center;}
     /* Day cell: 40px tall, radius 8, semibold 16/24.
@@ -171,6 +169,7 @@
       padding:var(--sp-m) var(--sp-m) calc(var(--sp-xl) + env(safe-area-inset-bottom));
       display:flex;flex-direction:column;justify-content:flex-end;gap:var(--sp-s);}
     .range-txt{font-size:16px;line-height:24px;font-weight:600;width:100%;}
+    .range-txt .muted{color:#667a8b;}   /* "Oneway" label (Figma 2671:24843) */
 
     /* ---------- City picker ---------- */
     #screenCity{background:var(--surface-white);}
@@ -312,16 +311,11 @@
         <h2 class="cal-title">Select your travel dates</h2>
       </div>
       <div class="legend-row">
-        <div class="legend-main">
-          <span class="chip" id="legendChip">&lt;200 €</span>
-          <span class="legend-txt">Highlighted days are cheaper by ~15%</span>
-        </div>
-        <button class="info-ico" id="infoBtn" type="button" aria-label="More information" aria-expanded="false">i</button>
+        <span class="chip" id="legendChip">Under 200 €</span>
+        <span class="legend-txt">Lowest fares in this period</span>
       </div>
       <div class="weekdays" id="weekdays"></div>
     </div>
-
-    <p class="disclaimer" id="disclaimer" hidden></p>
 
     <div class="months" id="months"></div>
 
@@ -467,10 +461,12 @@
     const n=paxCount();
     return n+', '+state.pax.cabin;
   }
+  // Footer summary. With only a departure chosen the trip reads as one-way and
+  // the label is muted (Figma 2671:24843).
   function rangeText(){
     const d=state.departure, r=(state.tripType==='round')?state.return:null;
-    if(d&&r) return fmtLong(d)+' - '+fmtLong(r);
-    if(d) return fmtLong(d);
+    if(d&&r) return esc(fmtLong(d))+' - '+esc(fmtLong(r));
+    if(d) return esc(fmtLong(d))+' - <span class="muted">Oneway</span>';
     return 'Select your dates';
   }
 
@@ -560,10 +556,11 @@
         const date=new Date(y,m,d);
         const past=date<state.minDate;
         const isSel=sameDay(date,state.departure)||(state.tripType==='round'&&sameDay(date,state.return));
-        const isCheap=cheap.has(d)&&!isSel;
         const isStart=hasRange&&sameDay(date,dep);
         const isEnd=hasRange&&sameDay(date,ret);
         const inRange=hasRange&&date>dep&&date<ret;
+        // Inside the selected range the range styling wins — no green cheap days.
+        const isCheap=cheap.has(d)&&!isSel&&!inRange;
         const cell=document.createElement('button');
         cell.type='button';
         cell.className='day'+(past?' past':'')+(isCheap?' cheap':'')+(isSel?' sel':'')
@@ -581,15 +578,8 @@
     }
 
     if(chipMax==null){ const f=cheapDaysForMonth(state.viewStart); chipMax=f.max; }
-    $('legendChip').textContent = chipMax!=null ? '<'+(Math.ceil(chipMax/10)*10)+' €' : '—';
-    $('rangeTxt').textContent = rangeText();
-    renderDisclaimer();
-  }
-  function renderDisclaimer(){
-    const el=$('disclaimer');
-    el.innerHTML = (state.behavior==='separate')
-      ? '<b>Green updates as you go:</b> cheapest days to set off, then the cheapest dates to return.'
-      : 'The best-value roundtrip days are in green. Pick what fits your plans and travel for less.';
+    $('legendChip').textContent = chipMax!=null ? 'Under '+(Math.ceil(chipMax/10)*10)+' €' : '—';
+    $('rangeTxt').innerHTML = rangeText();
   }
   function pick(date){
     if(state.tripType==='oneway'){
@@ -695,15 +685,13 @@
   $('calBack').addEventListener('click',()=>{ syncHome(); navTo('screenHome'); });
   // Task-completion trigger for the usability test: bind Useberry to "#setDates".
   $('setDates').addEventListener('click',()=>{
-    if(state.tripType==='round' && state.departure && !state.return){
-      const d=state.departure; state.return=new Date(d.getFullYear(),d.getMonth(),d.getDate()+4);
+    // Confirming with only a departure picked turns the search into a one-way trip.
+    if(state.departure && !state.return && state.tripType!=='oneway'){
+      state.tripType='oneway';
+      document.querySelectorAll('.trip-toggle button')
+        .forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.trip==='oneway')));
     }
     syncHome(); navHash('#/dates-set');   // distinct URL = task-completion signal
-  });
-  $('infoBtn').addEventListener('click',()=>{
-    const el=$('disclaimer'), open=el.hasAttribute('hidden');
-    if(open){ el.removeAttribute('hidden'); } else { el.setAttribute('hidden',''); }
-    $('infoBtn').setAttribute('aria-expanded',String(open));
   });
 
   $('paxField').addEventListener('click',openPax);
@@ -732,7 +720,6 @@
 
   /* ---------- Init ---------- */
   renderWeekdays();
-  renderDisclaimer();
   syncHome();
   applyRoute();   // honour a deep link (e.g. …#/dates) on first load
 </script>

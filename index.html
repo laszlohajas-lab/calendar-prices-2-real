@@ -675,8 +675,10 @@
         pageReserve = 0; document.body.style.minHeight = '';   // fresh reservation each open
         $('datePanel').hidden = false;
         renderDatePanel();
-        // V4 uses a constant width (the trends views replace the months, so measuring months won't work)
-        positionPanel($('datePanel'), bar, 'right', 828);   // constant width for the tabbed picker
+        // Constant width (the trends views replace the months, so measuring months won't work).
+        // V1 · Static uses the designed 744px = 24px padding + 328 + 40 gap + 328 (Figma 2544:29834).
+        // V2 keeps the previous 828px until its own design lands.
+        positionPanel($('datePanel'), bar, 'right', state.behavior==='static' ? 744 : 828);
         scrollPanelIntoView($('datePanel'));   // scroll to make calendar visible on first open
       } else if(name === 'pax'){
         renderPax();
@@ -895,6 +897,23 @@
 
     // ================= CALENDAR =================
     const monthsEl = $('months');
+    // Highest price among the highlighted (cheap) days across the two visible months —
+    // drives the "Under €X" legend chip so the number matches the prices actually shown.
+    function cheapThreshold(){
+      let mx = null;
+      const useReturns = (state.tripType==='round' && state.departure) &&
+                         (state.behavior==='separate' && state.activeField==='return');
+      for(let m=0; m<2; m++){
+        const base = addMonths(state.view, m);
+        const y = base.getFullYear(), mo = base.getMonth();
+        cheapDaysForMonth(base).forEach(d => {
+          const date = new Date(y, mo, d);
+          const p = useReturns ? priceForReturn(state.departure, date) : priceFor(date);
+          if(mx == null || p > mx) mx = p;
+        });
+      }
+      return mx;
+    }
     function renderMonths(){
       monthsEl.innerHTML = '';
       for(let m=0;m<2;m++){ const base = addMonths(state.view, m); monthsEl.appendChild(buildMonth(base, m, cheapDaysForMonth(base))); }
@@ -1079,11 +1098,22 @@
       document.querySelectorAll('#v4Tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v4tab === state.v4Tab)));
       const footer=document.querySelector('.picker-footer'), banner=$('infoBanner');
       if(state.v4Tab === 'calendar'){
-        $('months').style.display=''; $('trends').style.display='none'; banner.style.display='flex';
+        const simplified = (state.behavior==='static');   // V1 · Static — simplified layout (Figma 2544:29834)
+        $('months').style.display=''; $('trends').style.display='none';
+        // The simplified V1 drops the info banner above the calendar entirely.
+        banner.style.display = simplified ? 'none' : 'flex';
         $('infoText').textContent = (state.behavior==='separate')
           ? 'Green updates as you go: cheapest days to set off, then the cheapest dates to return.'
           : 'The best-value round-trip days are in green. Pick what fits your plans and travel for less.';
-        footer.style.display='flex'; $('fromChip').style.display=''; $('legendDesc').style.fontWeight=''; $('legendDesc').textContent = 'Highlighted days are cheaper by ~15%';
+        footer.style.display='flex'; $('fromChip').style.display=''; $('legendDesc').style.fontWeight='';
+        if(simplified){
+          const t = cheapThreshold();
+          $('fromChip').textContent = t!=null ? 'Under €'+(Math.ceil(t/10)*10) : 'Under €142';
+          $('legendDesc').textContent = 'Lowest fares in this period';
+        } else {
+          $('fromChip').textContent = 'from €142';
+          $('legendDesc').textContent = 'Highlighted days are cheaper by ~15%';
+        }
         renderMonths();
       } else {
         $('months').style.display='none'; $('trends').style.display='flex'; banner.style.display='none';
