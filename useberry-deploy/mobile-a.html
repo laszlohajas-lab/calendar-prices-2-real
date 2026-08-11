@@ -114,8 +114,11 @@
       padding:var(--sp-xl) var(--sp-m) var(--sp-m);display:flex;flex-direction:column;gap:var(--sp-xl);
       flex-shrink:0;z-index:5;}
     .cal-title-row{display:flex;align-items:center;gap:var(--sp-xl);}
-    .back{width:24px;height:24px;display:grid;place-items:center;flex-shrink:0;}
-    .back svg{display:block;}
+    /* Back arrow: 24x24 icon box (Figma General/Arrow, icons/m = 24px).
+       The svg needs explicit dimensions — without them it falls back to the
+       browser default size instead of filling the 24px box. */
+    .back{width:24px;height:24px;display:grid;place-items:center;flex-shrink:0;padding:0;}
+    .back svg{display:block;width:24px;height:24px;}
     .cal-title{flex:1;min-width:0;font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
     .legend-row{display:flex;align-items:center;gap:var(--sp-m);}
     .legend-main{display:flex;align-items:center;gap:var(--sp-m);flex:1;min-width:0;}
@@ -136,13 +139,32 @@
     .month h2{margin:0 0 var(--sp-m);font-size:20px;line-height:24px;font-weight:700;letter-spacing:-.5px;}
     .grid{display:flex;flex-direction:column;gap:var(--sp-xs);}
     .week{display:flex;gap:var(--sp-xs);align-items:center;}
-    .day{flex:1;min-width:0;height:40px;border-radius:var(--radius-m);
+    /* Day cell: 40px tall, radius 8, semibold 16/24.
+       Three stacked layers (Figma 2247:7592):
+         ::before  z0  selected-range band (#f0f2f3)
+         ::after   z1  pill — navy endpoint or green cheap day
+         > span    z2  the date number                                        */
+    .day{position:relative;flex:1;min-width:0;height:40px;
       display:grid;place-items:center;font-size:16px;line-height:24px;font-weight:600;
-      font-variant-numeric:tabular-nums;transition:background .12s;}
+      font-variant-numeric:tabular-nums;padding:0;}
+    .day > span{position:relative;z-index:2;}
     .day.empty{pointer-events:none;}
     .day.past{color:#b2bdc5;pointer-events:none;}
-    .day.cheap{background:var(--surface-success);}
-    .day.sel{background:var(--surface-primary);color:var(--text-white);}
+    /* Days strictly between the two endpoints: the band bleeds 4px past each
+       side, exactly closing the 8px grid gap so it reads as one continuous bar. */
+    .day.inrange::before{content:'';position:absolute;top:0;bottom:0;left:-4px;right:-4px;
+      background:var(--surface-quinary);z-index:0;}
+    /* Endpoints: a 12px connector pointing into the range, behind the navy pill. */
+    .day.range-start::before,.day.range-end::before{content:'';position:absolute;top:0;bottom:0;
+      width:12px;background:var(--surface-quinary);z-index:0;}
+    .day.range-start::before{right:-6px;}
+    .day.range-end::before{left:-6px;}
+    /* Pills (source order matters: a selected endpoint outranks a cheap day). */
+    .day.cheap::after,.day.sel::after{content:'';position:absolute;inset:0;
+      border-radius:var(--radius-m);z-index:1;}
+    .day.cheap::after{background:var(--surface-success);}
+    .day.sel::after{background:var(--surface-primary);}
+    .day.sel{color:var(--text-white);}
 
     /* Sticky footer: pt 16 / pb 24 / px 16, gap 12 (Figma 2669:24249) */
     .cal-foot{flex-shrink:0;border-top:1px solid var(--stroke-primary);background:var(--surface-white);
@@ -515,6 +537,9 @@
     let chipMax=null;
     // the month the user is working in drives the legend chip
     const focus = state.departure || state.viewStart;
+    // Selected range (round trips only, and only once both ends are chosen)
+    const dep=state.departure, ret=(state.tripType==='round')?state.return:null;
+    const hasRange = !!(dep && ret && ret>dep);
 
     for(let i=0;i<MONTHS_SHOWN;i++){
       const base=addMonths(state.viewStart,i);
@@ -536,10 +561,14 @@
         const past=date<state.minDate;
         const isSel=sameDay(date,state.departure)||(state.tripType==='round'&&sameDay(date,state.return));
         const isCheap=cheap.has(d)&&!isSel;
+        const isStart=hasRange&&sameDay(date,dep);
+        const isEnd=hasRange&&sameDay(date,ret);
+        const inRange=hasRange&&date>dep&&date<ret;
         const cell=document.createElement('button');
         cell.type='button';
-        cell.className='day'+(past?' past':'')+(isCheap?' cheap':'')+(isSel?' sel':'');
-        cell.textContent=d;
+        cell.className='day'+(past?' past':'')+(isCheap?' cheap':'')+(isSel?' sel':'')
+          +(inRange?' inrange':'')+(isStart?' range-start':'')+(isEnd?' range-end':'');
+        const num=document.createElement('span'); num.textContent=d; cell.appendChild(num);
         if(!past) cell.addEventListener('click',()=>pick(date));
         week.appendChild(cell);
         if(week.children.length===7){ grid.appendChild(week); week=document.createElement('div'); week.className='week'; }
