@@ -465,6 +465,13 @@
     document.querySelectorAll('.screen').forEach(s=> s.classList.toggle('active', s.id===id));
     window.scrollTo(0,0);
   }
+  // Screen swaps are deferred one beat so analytics / task-trigger recorders
+  // (Useberry) resolve the element that was ACTUALLY clicked. Swapping screens
+  // synchronously removes the button from the DOM before the event finishes
+  // bubbling, so the trigger binds to the incoming screen (e.g. "#screenHome")
+  // instead of the button. 160ms is imperceptible but enough to capture.
+  const NAV_DELAY = 160;
+  function navTo(id){ setTimeout(()=>show(id), NAV_DELAY); }
 
   /* ---------- Home fields ---------- */
   function syncHome(){
@@ -552,8 +559,8 @@
     state.cityTarget=target;
     $('cityInput').value='';
     renderCityList('');
-    show('screenCity');
-    setTimeout(()=>$('cityInput').focus(),50);
+    navTo('screenCity');
+    setTimeout(()=>$('cityInput').focus(), NAV_DELAY+50);
   }
   function renderCityList(q){
     const list=CITIES.filter(c=> !q || c.label.toLowerCase().includes(q.toLowerCase()) || c.code.toLowerCase().includes(q.toLowerCase()));
@@ -564,7 +571,7 @@
       b.addEventListener('click',()=>{
         const city=CITIES.find(c=>c.code===b.dataset.code);
         if(state.cityTarget==='from') state.from=city; else state.to=city;
-        syncHome(); show('screenHome');
+        syncHome(); navTo('screenHome');
       });
     });
   }
@@ -627,20 +634,21 @@
   $('fromField').addEventListener('click',()=>openCity('from'));
   $('toField').addEventListener('click',()=>openCity('to'));
   $('swap').addEventListener('click',()=>{ const t=state.from; state.from=state.to; state.to=t; syncHome(); });
-  $('cityBack').addEventListener('click',()=>show('screenHome'));
+  $('cityBack').addEventListener('click',()=>navTo('screenHome'));
   $('cityInput').addEventListener('input',e=>renderCityList(e.target.value.trim()));
 
   $('datesField').addEventListener('click',()=>{
     state.activeField='departure';
     renderCalendar();
-    show('screenCal');
+    navTo('screenCal');
   });
-  $('calBack').addEventListener('click',()=>{ syncHome(); show('screenHome'); });
+  $('calBack').addEventListener('click',()=>{ syncHome(); navTo('screenHome'); });
+  // Task-completion trigger for the usability test: bind Useberry to "#setDates".
   $('setDates').addEventListener('click',()=>{
     if(state.tripType==='round' && state.departure && !state.return){
       const d=state.departure; state.return=new Date(d.getFullYear(),d.getMonth(),d.getDate()+4);
     }
-    syncHome(); show('screenHome');
+    syncHome(); navTo('screenHome');
   });
   $('infoBtn').addEventListener('click',()=>{
     const el=$('disclaimer'), open=el.hasAttribute('hidden');
