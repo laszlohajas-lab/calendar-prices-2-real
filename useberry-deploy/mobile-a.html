@@ -127,14 +127,17 @@
       font-size:16px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums;}
     .legend-txt{font-size:14px;line-height:20px;}
     /* Info affordance + tooltip (Figma 2689:25517) — V2 only */
+    /* The icon sits 8px after the caption (chip 117 + 8 + text 165 + 8), NOT pushed to
+       the far edge — Figma 2689:25169 puts it at x=298 inside a 322-wide legend row. */
     .info-ico{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--surface-primary);
       color:#fff;font:italic 700 14px Georgia,serif;display:grid;place-items:center;
-      margin-left:auto;position:relative;z-index:41;}
+      position:relative;z-index:41;}
     .info-ico[hidden]{display:none;}
-    .info-ico.open{box-shadow:0 0 0 8px #fff;}   /* 40x40 white halo while the tip is open */
+    .info-ico.open{box-shadow:0 0 0 8px #fff;}   /* 40x40 white halo (Figma 2689:25522) */
     .tip-backdrop{position:absolute;inset:0;background:rgba(0,34,62,.45);z-index:40;}
     .tip-backdrop[hidden]{display:none;}
-    .tip-card{position:absolute;top:120px;left:var(--sp-m);right:var(--sp-m);
+    /* Card: 314x auto at x=33, 8px below the legend row (Figma 2689:25517) */
+    .tip-card{position:absolute;top:120px;left:33px;right:43px;
       background:#fff;border-radius:var(--radius-m);padding:var(--sp-m);
       display:flex;flex-direction:column;gap:var(--sp-xs);
       box-shadow:0 8px 24px rgba(0,34,62,.18);}

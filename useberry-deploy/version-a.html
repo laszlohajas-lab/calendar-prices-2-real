@@ -678,9 +678,9 @@
         $('datePanel').hidden = false;
         renderDatePanel();
         // Constant width (the trends views replace the months, so measuring months won't work).
-        // V1 · Static uses the designed 744px = 24px padding + 328 + 40 gap + 328 (Figma 2544:29834).
-        // V2 keeps the previous 828px until its own design lands.
-        positionPanel($('datePanel'), bar, 'right', state.behavior==='static' ? 744 : 828);
+        // Both variants are designed at 744px = 24px padding + 328 + 40 gap + 328
+        // (Figma 2544:29834 V1-Static and 2544:29869 V3-Dynamic).
+        positionPanel($('datePanel'), bar, 'right', 744);
         scrollPanelIntoView($('datePanel'));   // scroll to make calendar visible on first open
       } else if(name === 'pax'){
         renderPax();
@@ -1088,7 +1088,7 @@
       if(!state.openPanel) return;
       if(state.openPanel==='from') positionPanel($('fromPanel'), $('locGroup'), 'left');
       else if(state.openPanel==='to') positionPanel($('toPanel'), $('toField'), 'left', 300);
-      else if(state.openPanel==='dates'){ positionPanel($('datePanel'), bar, 'right', state.behavior==='static' ? 744 : 828); }
+      else if(state.openPanel==='dates'){ positionPanel($('datePanel'), bar, 'right', 744); }
       else if(state.openPanel==='pax') positionPanel($('paxPanel'), $('paxField'), 'right', 320);
     });
 
@@ -1100,23 +1100,19 @@
       document.querySelectorAll('#v4Tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v4tab === state.v4Tab)));
       const footer=document.querySelector('.picker-footer'), banner=$('infoBanner');
       if(state.v4Tab === 'calendar'){
-        const simplified = (state.behavior==='static');   // V1 · Static — simplified layout (Figma 2544:29834)
         $('months').style.display=''; $('trends').style.display='none';
-        // The simplified V1 drops the info banner above the calendar entirely.
-        banner.style.display = simplified ? 'none' : 'flex';
+        // Both variants share the simplified layout and legend. The only difference:
+        // V2 · Dynamic keeps the explanatory banner above the calendar (Figma 2544:29869),
+        // V1 · Static drops it (Figma 2544:29834).
+        banner.style.display = (state.behavior==='static') ? 'none' : 'flex';
         // Lead-in is bold, remainder regular (Figma 2595:5995).
         $('infoText').innerHTML = (state.behavior==='separate')
           ? '<b>Green updates as you go:</b> cheapest days to set off, then the cheapest dates to return.'
           : '<b>The best-value round-trip days are in green.</b> Pick what fits your plans and travel for less.';
         footer.style.display='flex'; $('fromChip').style.display=''; $('legendDesc').style.fontWeight='';
-        if(simplified){
-          const t = cheapThreshold();
-          $('fromChip').textContent = t!=null ? 'Under €'+(Math.ceil(t/10)*10) : 'Under €142';
-          $('legendDesc').textContent = 'Lowest fares in this period';
-        } else {
-          $('fromChip').textContent = 'from €142';
-          $('legendDesc').textContent = 'Highlighted days are cheaper by ~15%';
-        }
+        const t = cheapThreshold();
+        $('fromChip').textContent = t!=null ? 'Under €'+(Math.ceil(t/10)*10) : 'Under €142';
+        $('legendDesc').textContent = 'Lowest fares in this period';
         renderMonths();
       } else {
         $('months').style.display='none'; $('trends').style.display='flex'; banner.style.display='none';
