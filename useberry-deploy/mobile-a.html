@@ -111,7 +111,7 @@
     /* ---------- CALENDAR ---------- */
     #screenCal{background:var(--surface-white);}
     .cal-head{background:var(--surface-white);border-bottom:1px solid var(--stroke-primary);
-      padding:var(--sp-xl) var(--sp-m) var(--sp-m);display:flex;flex-direction:column;gap:var(--sp-xl);
+      padding:var(--sp-m);display:flex;flex-direction:column;gap:var(--sp-m);
       flex-shrink:0;z-index:5;}
     .cal-title-row{display:flex;align-items:center;gap:var(--sp-xl);}
     /* Back arrow: 24x24 icon box (Figma General/Arrow, icons/m = 24px).
@@ -136,14 +136,15 @@
     .info-ico.open{box-shadow:0 0 0 8px #fff;}   /* 40x40 white halo (Figma 2689:25522) */
     .tip-backdrop{position:absolute;inset:0;background:rgba(0,34,62,.45);z-index:40;}
     .tip-backdrop[hidden]{display:none;}
-    /* Card: 314x auto at x=33, 8px below the legend row (Figma 2689:25517) */
-    .tip-card{position:absolute;top:120px;left:33px;right:43px;
+    /* Card: 314 wide at x=33, padding 16, gap 8, radius 8, NO shadow (Figma 2689:25517).
+       `top` is set in JS from the icon so it stays anchored if the header spacing changes. */
+    .tip-card{position:absolute;left:33px;right:43px;
       background:#fff;border-radius:var(--radius-m);padding:var(--sp-m);
-      display:flex;flex-direction:column;gap:var(--sp-xs);
-      box-shadow:0 8px 24px rgba(0,34,62,.18);}
+      display:flex;flex-direction:column;gap:var(--sp-xs);}
     .tip-title{margin:0;font-size:14px;line-height:20px;font-weight:600;color:var(--text-primary);}
     .tip-body{margin:0;font-size:14px;line-height:20px;font-weight:400;color:var(--text-primary);}
-    .tip-ok{align-self:flex-start;padding:0;font-size:14px;line-height:20px;font-weight:700;color:#0f8a0f;}
+    .tip-ok{align-self:stretch;text-align:left;padding:0;
+      font-size:14px;line-height:20px;font-weight:700;color:#0f8a0f;}
     .weekdays{display:flex;gap:var(--sp-xs);}
     .weekdays span{flex:1;min-width:0;text-align:center;font-size:14px;line-height:20px;}
 
@@ -686,6 +687,10 @@
     $('tipBackdrop').hidden=false;
     $('infoBtn').classList.add('open');
     $('infoBtn').setAttribute('aria-expanded','true');
+    // Card sits 8px below the 40px halo, i.e. 16px below the 24px icon (Figma 2689:25526).
+    const app=document.querySelector('.app').getBoundingClientRect();
+    const ico=$('infoBtn').getBoundingClientRect();
+    document.querySelector('.tip-card').style.top=(ico.bottom-app.top+16)+'px';
   }
   function closeTip(){
     $('tipBackdrop').hidden=true;
