@@ -112,7 +112,9 @@
     #screenCal{background:var(--surface-white);}
     .cal-head{background:var(--surface-white);border-bottom:1px solid var(--stroke-primary);
       padding:var(--sp-m);display:flex;flex-direction:column;gap:var(--sp-m);
-      flex-shrink:0;z-index:5;}
+      flex-shrink:0;}
+      /* NB: no z-index here. As a flex item, any z-index would create a stacking
+         context and trap the ⓘ below the tooltip scrim (it must sit above it). */
     .cal-title-row{display:flex;align-items:center;gap:var(--sp-xl);}
     /* Back arrow: 24x24 icon box (Figma General/Arrow, icons/m = 24px).
        The svg needs explicit dimensions — without them it falls back to the
