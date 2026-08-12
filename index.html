@@ -571,16 +571,16 @@
       behavior: 'static',  // 'static' (V1) | 'separate' (V2)
       v4Tab: 'calendar',   // 'calendar' | 'trends'
       v4Layer: 'year',     // within Price trends: 'year' | 'day'
-      v4Month: new Date(2026, 6, 1),   // month drilled into in the day view (July 2026)
+      v4Month: new Date(2026, 7, 1),   // month drilled into in the day view (August 2026)
       tripType: 'round',
-      view: new Date(2026, 6, 1),      // calendar opens on July 2026
-      departure: new Date(2026, 6, 25),    // preselected 4-day trip: Sat, Jul 25 …
-      return: new Date(2026, 6, 29),       // … → Wed, Jul 29
+      view: new Date(2026, 7, 1),      // calendar opens on August 2026
+      departure: new Date(2026, 7, 15),    // preselected trip: Sat, Aug 15 …
+      return: new Date(2026, 7, 18),       // … → Tue, Aug 18
       activeField: 'departure',
-      minDate: startOfDay(new Date(2026, 6, 22)),   // today — July 1–21 are in the past
+      minDate: startOfDay(new Date(2026, 7, 12)),   // "today" — earlier August days are in the past
       from: { label: 'Paris, France', code: 'CDG' },
       to:   { label: 'Agadir, Morocco', code: 'AGA' },
-      pax: { adults: 2, children: 0, infants: 0, cabin: 'Premium economy' },
+      pax: { adults: 1, children: 0, infants: 0, cabin: 'Economy' },
       openPanel: null,     // 'from' | 'to' | 'dates' | 'pax'
       acIndex: -1,         // highlighted autocomplete option
       focusTs: null,       // keyboard-focused day (timestamp)
@@ -626,7 +626,15 @@
       }
     }
     function paxCount(){ return state.pax.adults + state.pax.children + state.pax.infants; }
-    function paxText(){ const n = paxCount(); return n + ' passenger' + (n===1?'':'s') + ', ' + state.pax.cabin; }
+    // "1 Adult, Economy" while it's adults-only; falls back to a passenger count once mixed.
+    function paxText(){
+      const { adults, children, infants, cabin } = state.pax;
+      const n = adults + children + infants;
+      const who = (children + infants === 0)
+        ? adults + ' Adult' + (adults===1?'':'s')
+        : n + ' Passenger' + (n===1?'':'s');
+      return who + ', ' + cabin;
+    }
 
     // ---------- Element refs ----------
     const $ = id => document.getElementById(id);
@@ -1065,9 +1073,9 @@
         document.querySelectorAll('.mode-switch button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
         // V2 starts from the "on open" state so the recolour-on-departure is demonstrable
         // every version starts from the same preselected 4-day trip (fields never empty)
-        state.departure = new Date(2026, 6, 25);
-        state.return = new Date(2026, 6, 29);
-        state.view = new Date(2026, 6, 1);
+        state.departure = new Date(2026, 7, 15);
+        state.return = new Date(2026, 7, 18);
+        state.view = new Date(2026, 7, 1);
         state.activeField = 'departure';
         state.v4Tab = 'calendar';   // land on the calendar so the behaviour is visible
         openPanel('dates');   // reveal the calendar and re-render with the new behaviour
@@ -1086,7 +1094,7 @@
       if(!state.openPanel) return;
       if(state.openPanel==='from') positionPanel($('fromPanel'), $('locGroup'), 'left');
       else if(state.openPanel==='to') positionPanel($('toPanel'), $('toField'), 'left', 300);
-      else if(state.openPanel==='dates'){ positionPanel($('datePanel'), bar, 'right', 828); }
+      else if(state.openPanel==='dates'){ positionPanel($('datePanel'), bar, 'right', state.behavior==='static' ? 744 : 828); }
       else if(state.openPanel==='pax') positionPanel($('paxPanel'), $('paxField'), 'right', 320);
     });
 
@@ -1102,9 +1110,10 @@
         $('months').style.display=''; $('trends').style.display='none';
         // The simplified V1 drops the info banner above the calendar entirely.
         banner.style.display = simplified ? 'none' : 'flex';
-        $('infoText').textContent = (state.behavior==='separate')
-          ? 'Green updates as you go: cheapest days to set off, then the cheapest dates to return.'
-          : 'The best-value round-trip days are in green. Pick what fits your plans and travel for less.';
+        // Lead-in is bold, remainder regular (Figma 2595:5995).
+        $('infoText').innerHTML = (state.behavior==='separate')
+          ? '<b>Green updates as you go:</b> cheapest days to set off, then the cheapest dates to return.'
+          : '<b>The best-value round-trip days are in green.</b> Pick what fits your plans and travel for less.';
         footer.style.display='flex'; $('fromChip').style.display=''; $('legendDesc').style.fontWeight='';
         if(simplified){
           const t = cheapThreshold();
@@ -1129,7 +1138,7 @@
       pageReserve = Math.max(pageReserve, docBottom);
       document.body.style.minHeight = pageReserve + 'px';
     }
-    const YEAR_START=new Date(2026,6,1);   // rolling 12-month window starts July 2026 → next June
+    const YEAR_START=new Date(2026,7,1);   // rolling 12-month window starts August 2026 → next July
     const MONTH_FROM=[185,168,195,220,250,290,340,330,245,210,190,300];  // from-price by calendar month
     const YEAR_GREEN=[0,1,2,10];   // Jan, Feb, Mar, Nov are below-average months
     const YEAR_CHEAPEST=1;         // Feb — highlighted

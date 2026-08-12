@@ -126,6 +126,21 @@
       padding:0 var(--sp-s);display:grid;place-items:center;flex-shrink:0;
       font-size:16px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums;}
     .legend-txt{font-size:14px;line-height:20px;}
+    /* Info affordance + tooltip (Figma 2689:25517) — V2 only */
+    .info-ico{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--surface-primary);
+      color:#fff;font:italic 700 14px Georgia,serif;display:grid;place-items:center;
+      margin-left:auto;position:relative;z-index:41;}
+    .info-ico[hidden]{display:none;}
+    .info-ico.open{box-shadow:0 0 0 8px #fff;}   /* 40x40 white halo while the tip is open */
+    .tip-backdrop{position:absolute;inset:0;background:rgba(0,34,62,.45);z-index:40;}
+    .tip-backdrop[hidden]{display:none;}
+    .tip-card{position:absolute;top:120px;left:var(--sp-m);right:var(--sp-m);
+      background:#fff;border-radius:var(--radius-m);padding:var(--sp-m);
+      display:flex;flex-direction:column;gap:var(--sp-xs);
+      box-shadow:0 8px 24px rgba(0,34,62,.18);}
+    .tip-title{margin:0;font-size:14px;line-height:20px;font-weight:600;color:var(--text-primary);}
+    .tip-body{margin:0;font-size:14px;line-height:20px;font-weight:400;color:var(--text-primary);}
+    .tip-ok{align-self:flex-start;padding:0;font-size:14px;line-height:20px;font-weight:700;color:#0f8a0f;}
     .weekdays{display:flex;gap:var(--sp-xs);}
     .weekdays span{flex:1;min-width:0;text-align:center;font-size:14px;line-height:20px;}
 
@@ -283,11 +298,11 @@
         <div class="row2">
           <button class="field" id="datesField" type="button">
             <span class="lbl">Dates</span>
-            <span class="val" id="datesVal">Jul 25 - Jul 29</span>
+            <span class="val" id="datesVal">Aug 15 - Aug 18</span>
           </button>
           <button class="field" id="paxField" type="button">
             <span class="lbl">Passengers &amp; Seat…</span>
-            <span class="val" id="paxVal">1, Premium Eco…</span>
+            <span class="val" id="paxVal">1 Adult, Economy</span>
           </button>
         </div>
       </div>
@@ -313,6 +328,9 @@
       <div class="legend-row">
         <span class="chip" id="legendChip">Under 200 €</span>
         <span class="legend-txt">Lowest fares in this period</span>
+        <!-- V2 · Separate only: explains why the green days move (Figma 2689:25524) -->
+        <button class="info-ico" id="infoBtn" type="button" hidden
+                aria-label="About the highlighted days" aria-expanded="false">i</button>
       </div>
       <div class="weekdays" id="weekdays"></div>
     </div>
@@ -343,6 +361,15 @@
       <div id="paxRows"></div>
       <div class="cabins" id="cabins"></div>
       <button class="cta" id="paxDone" type="button">Done</button>
+    </div>
+  </div>
+
+  <!-- Behaviour tooltip (V2 · Separate only) -->
+  <div class="tip-backdrop" id="tipBackdrop" hidden>
+    <div class="tip-card" role="dialog" aria-label="About the highlighted days">
+      <p class="tip-title">Green updates as you go</p>
+      <p class="tip-body">It marks the cheapest days to set off, then the cheapest days to return.</p>
+      <button class="tip-ok" id="tipOk" type="button">Got it</button>
     </div>
   </div>
 
@@ -395,14 +422,14 @@
   const state = {
     behavior: 'static',                // 'static' (V1) | 'separate' (V2)
     tripType:'round',
-    departure:new Date(2026,6,25),     // preselected 4-day trip: Sat, Jul 25 …
-    return:new Date(2026,6,29),        // … → Wed, Jul 29
+    departure:new Date(2026,7,15),     // preselected trip: Sat, Aug 15 …
+    return:new Date(2026,7,18),        // … → Tue, Aug 18
     activeField:'departure',
-    minDate:startOfDay(new Date(2026,6,22)),
-    viewStart:new Date(2026,6,1),      // calendar opens on July 2026
+    minDate:startOfDay(new Date(2026,7,12)),   // "today"
+    viewStart:new Date(2026,7,1),      // calendar opens on August 2026
     from:{ label:'Paris, France', code:'CDG' },
     to:{ label:'Barcelona, Spain', code:'BCN' },
-    pax:{ adults:1, children:0, infants:0, cabin:'Premium economy' },
+    pax:{ adults:1, children:0, infants:0, cabin:'Economy' },
     nonstop:false,
     cityTarget:null,                   // 'from' | 'to'
   };
@@ -457,9 +484,14 @@
   function fmtShort(d){ return d ? MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate() : ''; }
   function fmtLong(d){ return d ? DOW[d.getDay()]+', '+MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate() : ''; }
   function paxCount(){ return state.pax.adults + state.pax.children + state.pax.infants; }
+  // "1 Adult, Economy" while it's adults-only; falls back to a passenger count once mixed.
   function paxText(){
-    const n=paxCount();
-    return n+', '+state.pax.cabin;
+    const {adults,children,infants,cabin}=state.pax;
+    const n=adults+children+infants;
+    const who=(children+infants===0)
+      ? adults+' Adult'+(adults===1?'':'s')
+      : n+' Passenger'+(n===1?'':'s');
+    return who+', '+cabin;
   }
   // Footer summary. With only a departure chosen the trip reads as one-way and
   // the label is muted (Figma 2671:24843).
@@ -646,6 +678,24 @@
   function openPax(){ renderPax(); $('paxBackdrop').classList.add('open'); }
   function closePax(){ $('paxBackdrop').classList.remove('open'); syncHome(); }
 
+  /* ---------- Behaviour tooltip (V2 · Separate only) ---------- */
+  function openTip(){
+    $('tipBackdrop').hidden=false;
+    $('infoBtn').classList.add('open');
+    $('infoBtn').setAttribute('aria-expanded','true');
+  }
+  function closeTip(){
+    $('tipBackdrop').hidden=true;
+    $('infoBtn').classList.remove('open');
+    $('infoBtn').setAttribute('aria-expanded','false');
+  }
+  // The affordance only exists in V2, where the green days actually move.
+  function syncTip(){
+    const show = (state.behavior==='separate');
+    $('infoBtn').hidden = !show;
+    if(!show) closeTip();
+  }
+
   /* ---------- Toast ---------- */
   let toastT=null;
   function toast(msg){
@@ -694,6 +744,10 @@
     syncHome(); navHash('#/dates-set');   // distinct URL = task-completion signal
   });
 
+  $('infoBtn').addEventListener('click',()=>{ $('tipBackdrop').hidden ? openTip() : closeTip(); });
+  $('tipOk').addEventListener('click',closeTip);
+  $('tipBackdrop').addEventListener('click',e=>{ if(e.target===$('tipBackdrop')) closeTip(); });
+
   $('paxField').addEventListener('click',openPax);
   $('paxDone').addEventListener('click',closePax);
   $('paxBackdrop').addEventListener('click',e=>{ if(e.target===$('paxBackdrop')) closePax(); });
@@ -710,9 +764,10 @@
       state.behavior=b.dataset.behavior;
       document.querySelectorAll('.mode-switch button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
       // every version restarts from the same preselected 4-day trip
-      state.departure=new Date(2026,6,25);
-      state.return=new Date(2026,6,29);
+      state.departure=new Date(2026,7,15);
+      state.return=new Date(2026,7,18);
       state.activeField='departure';
+      syncTip();
       syncHome();
       if($('screenCal').classList.contains('active')) renderCalendar();
     });
@@ -720,6 +775,7 @@
 
   /* ---------- Init ---------- */
   renderWeekdays();
+  syncTip();
   syncHome();
   applyRoute();   // honour a deep link (e.g. …#/dates) on first load
 </script>
