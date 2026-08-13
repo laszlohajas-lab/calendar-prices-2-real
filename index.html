@@ -449,7 +449,12 @@
             <div class="fromchip" id="fromChip">from €142</div>
             <div class="desc" id="legendDesc">Highlighted days are cheaper by ~15%</div>
           </div>
+          <!-- Two distinct buttons so a test tool can trigger on the exact view.
+               #setDates        → Calendar tab
+               #setDatesTrends  → Price trends, day view
+               Only one is ever visible; renderDatePanel() swaps them. -->
           <button class="set-dates" id="setDates">Set dates</button>
+          <button class="set-dates" id="setDatesTrends" hidden>Set dates</button>
         </div>
       </section>
 
@@ -925,7 +930,8 @@
     function renderMonths(){
       monthsEl.innerHTML = '';
       for(let m=0;m<2;m++){ const base = addMonths(state.view, m); monthsEl.appendChild(buildMonth(base, m, cheapDaysForMonth(base))); }
-      $('setDates').disabled = false;   // always enabled — clicking with no return converts to one-way
+      // always enabled — clicking with no return converts to one-way
+      $('setDates').disabled = false; $('setDatesTrends').disabled = false;
     }
     // The 5–10 cheapest days of the month get the green highlight.
     // V1 (static): always the cheapest overall departure prices.
@@ -1055,7 +1061,11 @@
       if(next < state.minDate) return;
       focusDayByTs(next.getTime());
     });
-    $('setDates').addEventListener('click', () => {
+    // Shared by both confirm buttons. They differ only in identity, so a test tool can
+    // bind a task-completion trigger to the exact view:
+    //   #setDates        → Calendar tab
+    //   #setDatesTrends  → Price trends, day view
+    function commitDates(){
       // Round trip with a departure but no return → commit as a one-way trip
       if(state.tripType==='round' && state.departure && !state.return){
         state.tripType = 'oneway';
@@ -1063,8 +1073,12 @@
         document.querySelectorAll('.trip-toggle button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.trip==='oneway')));
         renderMonths();
       }
-      closePanel();
-    });
+      // Deferred one beat so click/trigger recorders resolve the button that was actually
+      // clicked before closePanel() hides it. 160ms is imperceptible but enough to capture.
+      setTimeout(closePanel, 160);
+    }
+    $('setDates').addEventListener('click', commitDates);
+    $('setDatesTrends').addEventListener('click', commitDates);
 
     // ---- Calendar-behaviour switch (bottom-left) ----
     document.querySelectorAll('.mode-switch button').forEach(b => {
@@ -1116,6 +1130,7 @@
           ? '<b>Green updates as you go:</b> cheapest days to set off, then the cheapest dates to return.'
           : '<b>The best-value round-trip days are in green.</b> Pick what fits your plans and travel for less.';
         footer.style.display='flex'; $('fromChip').style.display=''; $('legendDesc').style.fontWeight='';
+        $('setDates').hidden = false; $('setDatesTrends').hidden = true;   // calendar's own button
         const t = cheapThreshold();
         $('fromChip').textContent = t!=null ? 'Under €'+(Math.ceil(t/10)*10) : 'Under €142';
         $('legendDesc').textContent = 'Lowest fares in this period';
@@ -1123,7 +1138,12 @@
       } else {
         $('months').style.display='none'; $('trends').style.display='flex'; banner.style.display='none';
         if(state.v4Layer === 'year'){ footer.style.display='none'; renderTrendsYear(); }
-        else { footer.style.display='flex'; $('fromChip').style.display='none'; $('legendDesc').style.fontWeight='600'; $('legendDesc').textContent = rangeText(); renderTrendsDay(); }
+        else {
+          footer.style.display='flex'; $('fromChip').style.display='none'; $('legendDesc').style.fontWeight='600';
+          $('legendDesc').textContent = rangeText();
+          $('setDates').hidden = true; $('setDatesTrends').hidden = false;  // day-view's own button
+          renderTrendsDay();
+        }
       }
       // Panel always hugs its content (no fixed height). We instead reserve enough page
       // height that shrinking content never forces the browser to clamp/scroll the page.
