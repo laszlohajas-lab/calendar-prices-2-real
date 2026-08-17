@@ -598,7 +598,10 @@
       return esc(text.slice(0,i)) + '<b>' + esc(text.slice(i, i+q.length)) + '</b>' + esc(text.slice(i+q.length));
     }
     // seasonal baseline "from" price per month (Jan..Dec) — gives the year view real shape
-    const SEASON = [185,168,190,215,250,300,345,335,240,205,178,295];
+    // Per-month price level, calibrated so each month's "Under €X" chip lands on target:
+    // Aug 100 · Sep 120 · Oct 140 · Nov 130 · Dec 180 · Jan 130 · Feb 120 · Mar 130
+    // Apr 140 · May 150 · Jun 170 · Jul 180        (index = calendar month, 0 = January)
+    const SEASON = [89,82,95,101,114,137,135,39,95,98,98,150];
     function priceFor(d){
       const seed = (d.getFullYear()*372 + d.getMonth()*31 + d.getDate()) * 2654435761 % 2147483647;
       const r = (Math.abs(seed) % 1000) / 1000;
@@ -612,9 +615,11 @@
       const seed = ((d.getFullYear()*372 + d.getMonth()*31 + d.getDate()) * 2654435761 + depSeed*40503) % 2147483647;
       const r = (Math.abs(seed) % 1000) / 1000;
       const tripLen = Math.round((d - dep) / 86400000);
-      const lenPenalty = Math.abs(tripLen - 7) * 5;              // ~1-week trips are cheapest
-      const weekend = (d.getDay()===5 || d.getDay()===6) ? 55 : 0;
-      return Math.round(150 + r*150 + lenPenalty + weekend);
+      const lenPenalty = Math.abs(tripLen - 7) * 3;              // ~1-week trips are cheapest
+      const weekend = (d.getDay()===5 || d.getDay()===6) ? 45 : 0;
+      // Same monthly level as the outbound leg, but a different hash — so the cheapest
+      // set genuinely reshuffles (the V2 behaviour) without changing the price band.
+      return Math.round(SEASON[d.getMonth()] + r*90 + lenPenalty + weekend);
     }
     function fmtField(d){ return d ? DOW[d.getDay()]+', '+MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate() : 'Select'; }
     // Round trip always keeps a return: if none is chosen, default to departure + 4 days
@@ -906,19 +911,25 @@
     const monthsEl = $('months');
     // Highest price among the highlighted (cheap) days across the two visible months —
     // drives the "Under €X" legend chip so the number matches the prices actually shown.
+    // Highest price among the highlighted (cheap) days of ONE month — each month has its
+    // own price level, so the chip reads "Under €100" in August, "Under €120" in September.
+    // The month shown is the one the user is working in: their chosen departure if it's on
+    // screen, otherwise the left-hand month.
     function cheapThreshold(){
-      let mx = null;
       const useReturns = (state.tripType==='round' && state.departure) &&
                          (state.behavior==='separate' && state.activeField==='return');
-      for(let m=0; m<2; m++){
-        const base = addMonths(state.view, m);
-        const y = base.getFullYear(), mo = base.getMonth();
-        cheapDaysForMonth(base).forEach(d => {
-          const date = new Date(y, mo, d);
-          const p = useReturns ? priceForReturn(state.departure, date) : priceFor(date);
-          if(mx == null || p > mx) mx = p;
-        });
-      }
+      const right = addMonths(state.view, 1);
+      const dep = state.departure;
+      const onScreen = d => d && ((d.getFullYear()===state.view.getFullYear() && d.getMonth()===state.view.getMonth())
+                               || (d.getFullYear()===right.getFullYear()   && d.getMonth()===right.getMonth()));
+      const base = onScreen(dep) ? new Date(dep.getFullYear(), dep.getMonth(), 1) : state.view;
+      const y = base.getFullYear(), mo = base.getMonth();
+      let mx = null;
+      cheapDaysForMonth(base).forEach(d => {
+        const date = new Date(y, mo, d);
+        const p = useReturns ? priceForReturn(state.departure, date) : priceFor(date);
+        if(mx == null || p > mx) mx = p;
+      });
       return mx;
     }
     function renderMonths(){
@@ -1149,9 +1160,10 @@
       document.body.style.minHeight = pageReserve + 'px';
     }
     const YEAR_START=new Date(2026,7,1);   // rolling 12-month window starts August 2026 → next July
-    const MONTH_FROM=[185,168,195,220,250,290,340,330,245,210,190,300];  // from-price by calendar month
-    const YEAR_GREEN=[0,1,2,10];   // Jan, Feb, Mar, Nov are below-average months
-    const YEAR_CHEAPEST=1;         // Feb — highlighted
+    // From-price by calendar month, in step with SEASON above (0 = January)
+    const MONTH_FROM=[130,120,130,140,150,170,180,100,120,140,130,180];
+    const YEAR_GREEN=[7,8,1,10];   // Aug, Sep, Feb, Nov are below-average months
+    const YEAR_CHEAPEST=7;         // August — cheapest, highlighted
     function renderTrendsYear(){
       const el=$('trends'); el.innerHTML='';
       el.appendChild(elc('tr-title','Cheapest months to fly'));
@@ -1189,11 +1201,16 @@
       const priceOf = date => useReturns ? priceForReturn(dep, date) : priceFor(date);
       const cheapSet = cheapDaysForMonth(base);   // the 5–8 cheapest days (respects behaviour + past days)
       const prices=[]; for(let d=1; d<=days; d++) prices.push(priceOf(new Date(y,m,d)));
-      const H=150,BV=110,TV=360, yb=v=>Math.max(6,Math.min(H,Math.round((v-BV)/(TV-BV)*H)));
+      // Axis follows the month actually on screen — each month sits at its own price level,
+      // so a fixed scale would squash cheap months and clip expensive ones.
+      const lo=Math.min(...prices), hi=Math.max(...prices);
+      const H=150, BV=Math.max(0, Math.floor(lo/20)*20 - 20), TV=Math.ceil(hi/20)*20 + 20;
+      const yb=v=>Math.max(6,Math.min(H,Math.round((v-BV)/(TV-BV)*H)));
+      const TICKS=[3,2,1].map(i=>Math.round((BV+(TV-BV)*i/4)/10)*10);
       const chart=elc('d-chart');
-      const yax=elc('d-yaxis'); [350,250,150].forEach(v=>{ const l=elc('yl','€'+v); l.style.bottom=(20+yb(v))+'px'; yax.appendChild(l); }); chart.appendChild(yax);
+      const yax=elc('d-yaxis'); TICKS.forEach(v=>{ const l=elc('yl','€'+v); l.style.bottom=(20+yb(v))+'px'; yax.appendChild(l); }); chart.appendChild(yax);
       const plot=elc('d-plot');
-      [350,250,150].forEach(v=>{ const g=elc('d-grid'); g.style.bottom=(20+yb(v))+'px'; plot.appendChild(g); });
+      TICKS.forEach(v=>{ const g=elc('d-grid'); g.style.bottom=(20+yb(v))+'px'; plot.appendChild(g); });
       const bars=elc('d-bars'), labels=elc('d-labels');
       for(let d=1; d<=days; d++){
         const date=new Date(y,m,d), p=prices[d-1], disabled=date<state.minDate;

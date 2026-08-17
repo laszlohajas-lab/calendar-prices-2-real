@@ -441,7 +441,10 @@
   };
 
   /* ---------- Pricing (identical model to the desktop build) ---------- */
-  const SEASON = [185,168,190,215,250,300,345,335,240,205,178,295];
+  // Per-month price level, calibrated so each month's "Under X €" chip lands on target:
+  // Aug 100 · Sep 120 · Oct 140 · Nov 130 · Dec 180 · Jan 130 · Feb 120 · Mar 130
+  // Apr 140 · May 150 · Jun 170 · Jul 180        (index = calendar month, 0 = January)
+  const SEASON = [89,82,95,101,114,137,135,39,95,98,98,150];
   function priceFor(d){
     const seed = (d.getFullYear()*372 + d.getMonth()*31 + d.getDate()) * 2654435761 % 2147483647;
     const r = (Math.abs(seed) % 1000) / 1000;
@@ -455,9 +458,11 @@
     const seed = ((d.getFullYear()*372 + d.getMonth()*31 + d.getDate()) * 2654435761 + depSeed*40503) % 2147483647;
     const r = (Math.abs(seed) % 1000) / 1000;
     const tripLen = Math.round((d - dep) / 86400000);
-    const lenPenalty = Math.abs(tripLen - 7) * 5;
-    const weekend = (d.getDay()===5 || d.getDay()===6) ? 55 : 0;
-    return Math.round(150 + r*150 + lenPenalty + weekend);
+    const lenPenalty = Math.abs(tripLen - 7) * 3;   // ~1-week trips are cheapest
+    const weekend = (d.getDay()===5 || d.getDay()===6) ? 45 : 0;
+    // Same monthly level as the outbound leg, but a different hash — so the cheapest
+    // set genuinely reshuffles (the V2 behaviour) without changing the price band.
+    return Math.round(SEASON[d.getMonth()] + r*90 + lenPenalty + weekend);
   }
   function useReturnPricing(){
     return (state.tripType==='round' && state.departure) &&
