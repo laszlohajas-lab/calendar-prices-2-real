@@ -442,9 +442,12 @@
 
   /* ---------- Pricing (identical model to the desktop build) ---------- */
   // Per-month price level, calibrated so each month's "Under X €" chip lands on target:
-  // Aug 100 · Sep 120 · Oct 140 · Nov 130 · Dec 180 · Jan 130 · Feb 120 · Mar 130
-  // Apr 140 · May 150 · Jun 170 · Jul 180        (index = calendar month, 0 = January)
-  const SEASON = [89,82,95,101,114,137,135,39,95,98,98,150];
+  // Aug 150 · Sep 170 · Oct 190 · Nov 210 · Dec 300 · Jan 180 · Feb 150 · Mar 130
+  // Apr 160 · May 200 · Jun 260 · Jul 300        (index = calendar month, 0 = January)
+  // August is the Task-1 starting month; March 2027 is the cheapest of the year and
+  // the "better period" Task 2 asks people to discover. Dec and Jul are the peaks.
+  // Chip values are always a multiple of 10 (they round up), so targets must be too.
+  const SEASON = [139,112,95,121,164,227,255,89,145,148,178,270];
   function priceFor(d){
     const seed = (d.getFullYear()*372 + d.getMonth()*31 + d.getDate()) * 2654435761 % 2147483647;
     const r = (Math.abs(seed) % 1000) / 1000;
