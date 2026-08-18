@@ -16,6 +16,11 @@ Within each platform the two variants are byte-identical except the locked
 behaviour, and both keep the title "Prices Calendar" so testers can't tell
 them apart. The Useberry tracking snippet is injected into the test builds
 only, never into the sources.
+
+NOTE: useberry-deploy/report.html is NOT generated here — it is the findings
+write-up, placed by hand and deliberately left out of the landing page so
+participants can't stumble onto the results mid-study. This script only ever
+writes the five files listed above, so the report survives a rebuild.
 """
 import os, sys
 

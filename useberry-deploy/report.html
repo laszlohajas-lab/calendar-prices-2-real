@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Keep the results out of search engines: test participants must not stumble
+     across the findings while a study round is still running. -->
+<meta name="robots" content="noindex,nofollow">
+<title>Prices Calendar — A/B Usability Test Report</title>
+<style>
+  :root{
+    --navy:#00223e; --muted:#667a8b; --line:#d9dee2; --bg:#f7f9fa; --white:#fff;
+    --a:#2f6fed;            /* Version A — static */
+    --b:#e8833a;            /* Version B — dynamic */
+    --green:#0f8a0f; --greenbg:#adebad; --red:#c0392b; --amber:#b8860b;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--navy);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Figtree,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px;}
+  header.masthead{border-bottom:3px solid var(--navy);padding-bottom:24px;margin-bottom:40px;}
+  h1{font-size:32px;line-height:1.2;margin:0 0 8px;letter-spacing:-.6px;}
+  .sub{color:var(--muted);font-size:15px;margin:0;}
+  h2{font-size:22px;margin:52px 0 6px;letter-spacing:-.3px;}
+  h2 .num{color:var(--muted);font-weight:400;margin-right:8px;}
+  h3{font-size:17px;margin:30px 0 10px;}
+  .lede{color:var(--muted);margin:0 0 22px;font-size:15px;}
+  section{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:28px 30px;margin-bottom:14px;}
+
+  /* ---- key numbers ---- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0 8px;}
+  .kpi{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+  .kpi .v{font-size:30px;font-weight:700;letter-spacing:-1px;line-height:1;}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:.6px;}
+  .kpi.warn .v{color:var(--red)}
+
+  /* ---- tables ---- */
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0;}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+  tr.total td{border-top:2px solid var(--navy);font-weight:600;}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;}
+  .sa{background:var(--a)} .sb{background:var(--b)}
+
+  /* ---- bar chart ---- */
+  .chart{margin:22px 0 8px;}
+  .row{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;margin-bottom:9px;}
+  .row .cap{font-size:13.5px;color:var(--muted);text-align:right;}
+  .bars{position:relative;}
+  .bar{height:26px;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;
+    padding-right:9px;color:#fff;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;
+    min-width:34px;margin-bottom:4px;}
+  .bar.a{background:var(--a)} .bar.b{background:var(--b)}
+  .bar.light{background:#dbe4ee;color:var(--navy)}
+  .axis{border-top:1px solid var(--line);margin-top:6px;padding-top:5px;
+    font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;}
+  .legend{display:flex;gap:20px;font-size:13px;color:var(--muted);margin:4px 0 18px;}
+
+  /* ---- callouts ---- */
+  .note{border-left:4px solid var(--navy);background:#f2f5f7;padding:14px 18px;
+    border-radius:0 6px 6px 0;margin:20px 0;font-size:14.5px;}
+  .note.win{border-color:var(--green);background:#f0faf0;}
+  .note.risk{border-color:var(--red);background:#fdf3f2;}
+  .note.caution{border-color:var(--amber);background:#fdf9ee;}
+  .note b{display:block;margin-bottom:4px;}
+
+  /* ---- quotes ---- */
+  .q{border-left:3px solid var(--line);padding:2px 0 2px 16px;margin:16px 0;}
+  .q p{margin:0 0 6px;font-size:15px;}
+  .q .who{font-size:12.5px;color:var(--muted);}
+  .q.pos{border-color:var(--green)} .q.neg{border-color:var(--red)} .q.neu{border-color:var(--muted)}
+  .tag{display:inline-block;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;
+    padding:2px 7px;border-radius:3px;margin-left:6px;vertical-align:1px;font-weight:600;}
+  .tag.a{background:#e7eefc;color:var(--a)} .tag.b{background:#fdeee2;color:#a85c1b}
+  .tag.d{background:#eef1f3;color:var(--muted)} .tag.m{background:#eef1f3;color:var(--muted)}
+
+  ul{padding-left:20px} li{margin-bottom:7px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600;}
+  .pill.ok{background:#e6f5e6;color:var(--green)} .pill.no{background:#fbe9e7;color:var(--red)}
+  .pill.mid{background:#fdf3dd;color:var(--amber)}
+  footer{color:var(--muted);font-size:13px;text-align:center;margin-top:48px;}
+  @media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:96px 1fr}}
+  @media print{body{background:#fff}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <h1>Prices Calendar — A/B Usability Test</h1>
+  <p class="sub">Static vs. Dynamic cheapest-day highlighting · Unmoderated, between-subjects · Useberry + Prolific<br>
+  16 participants · 4 per arm · Desktop &amp; Mobile · 13–17 August 2026</p>
+</header>
+
+<!-- ============ HEADLINE ============ -->
+<section>
+  <h2 style="margin-top:0"><span class="num">01</span>Headline</h2>
+  <p class="lede">What the 16 sessions actually showed.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">16/16</div><div class="l">Task 1 completed</div></div>
+    <div class="kpi"><div class="v">7/8</div><div class="l">Task 2 completed (desktop)</div></div>
+    <div class="kpi"><div class="v">4.6</div><div class="l">Avg Task 1 ease (of 5)</div></div>
+    <div class="kpi warn"><div class="v">3/8</div><div class="l">Read the disclaimer</div></div>
+  </div>
+
+  <div class="note win">
+    <b>Both versions work.</b>
+    Every participant in every arm completed the core date-picking task, most of them in
+    under 30 seconds. Neither behaviour is a blocker, so this is a question of preference
+    and comprehension rather than usability failure.
+  </div>
+
+  <div class="note risk">
+    <b>The dynamic version scored higher on confidence, not lower.</b>
+    On desktop, Version B users averaged <strong>4.25/5</strong> confidence that they'd
+    picked genuinely cheap days, against <strong>3.0/5</strong> for Version A — and B's
+    scores were far more consistent (4,4,4,5 vs 1,2,4,5). This contradicts the
+    pre-registered hypothesis that stable green days would feel more trustworthy.
+  </div>
+
+  <div class="note caution">
+    <b>The strongest finding isn't A vs B at all.</b>
+    Three participants, independently and across both arms and both platforms, asked for
+    the same missing thing: <strong>the actual price on each day in the calendar</strong>.
+    The calendar tells people <em>which</em> days are cheap but never <em>how much</em> —
+    and that gap drove more confusion than the static/dynamic difference did.
+  </div>
+</section>
+
+<!-- ============ WHAT WAS TESTED ============ -->
+<section>
+  <h2><span class="num">02</span>What was tested</h2>
+  <table>
+    <tr><th>Version</th><th>Behaviour</th><th>Arms</th></tr>
+    <tr>
+      <td><span class="swatch sa"></span><b>A — Static</b></td>
+      <td>Cheapest days are calculated once and stay put. Green never moves as you pick dates.</td>
+      <td>Desktop (4) · Mobile (4)</td>
+    </tr>
+    <tr>
+      <td><span class="swatch sb"></span><b>B — Dynamic</b></td>
+      <td>Each return date is priced off the chosen departure, so green recalculates and appears to jump.</td>
+      <td>Desktop (4) · Mobile (4)</td>
+    </tr>
+  </table>
+  <p style="font-size:14.5px;color:var(--muted);margin:6px 0 0">
+    <b>Task 1</b> (all arms): pick the best days for a Paris&nbsp;→&nbsp;Barcelona trip.<br>
+    <b>Task 2</b> (desktop only): explore the price-trends view and find a better period to travel.
+  </p>
+</section>
+
+<!-- ============ TASK 1 ============ -->
+<section>
+  <h2><span class="num">03</span>Task 1 — Pick the best days</h2>
+  <p class="lede">All 16 participants passed. The interesting differences are in ease, confidence and effort.</p>
+
+  <table>
+    <tr>
+      <th>Arm</th><th class="num">Pass</th><th class="num">Ease (1–5)</th>
+      <th class="num">Confidence</th><th class="num">Median time</th><th class="num">Median clicks</th>
+    </tr>
+    <tr><td><span class="swatch sa"></span>Desktop A — Static</td>
+        <td class="num">4/4</td><td class="num"><b>5.00</b></td><td class="num">3.00</td>
+        <td class="num">19.5 s</td><td class="num">6.5</td></tr>
+    <tr><td><span class="swatch sb"></span>Desktop B — Dynamic</td>
+        <td class="num">4/4</td><td class="num">4.75</td><td class="num"><b>4.25</b></td>
+        <td class="num">76.6 s</td><td class="num">5.0</td></tr>
+    <tr><td><span class="swatch sa"></span>Mobile A — Static</td>
+        <td class="num">4/4</td><td class="num">4.50</td><td class="num">3.75</td>
+        <td class="num">26.9 s</td><td class="num">10.5</td></tr>
+    <tr><td><span class="swatch sb"></span>Mobile B — Dynamic</td>
+        <td class="num">4/4</td><td class="num">4.25</td><td class="num">n/a</td>
+        <td class="num">22.5 s</td><td class="num">7.5</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--muted);margin:2px 0 0">
+    Medians shown rather than means: one outlier per arm (242 s desktop A, 113 s mobile B)
+    distorts the average badly at n=4. Confidence wasn't asked in the mobile B script.
+  </p>
+
+  <h3>Ease of task — higher is easier</h3>
+  <div class="legend"><span><span class="swatch sa"></span>Version A · Static</span>
+                      <span><span class="swatch sb"></span>Version B · Dynamic</span></div>
+  <div class="chart">
+    <div class="row"><div class="cap">Desktop</div><div class="bars">
+      <div class="bar a" style="width:100%">5.00</div>
+      <div class="bar b" style="width:95%">4.75</div></div></div>
+    <div class="row"><div class="cap">Mobile</div><div class="bars">
+      <div class="bar a" style="width:90%">4.50</div>
+      <div class="bar b" style="width:85%">4.25</div></div></div>
+    <div class="axis"><span>0</span><span>5</span></div>
+  </div>
+  <p style="font-size:14px;color:var(--muted)">
+    A edges B on both platforms, but by 0.25 points — one participant's rating. Not a
+    real difference at this sample size.
+  </p>
+
+  <h3>Confidence they picked genuinely cheap days</h3>
+  <div class="chart">
+    <div class="row"><div class="cap">Desktop A</div><div class="bars">
+      <div class="bar a" style="width:60%">3.00</div></div></div>
+    <div class="row"><div class="cap">Desktop B</div><div class="bars">
+      <div class="bar b" style="width:85%">4.25</div></div></div>
+    <div class="row"><div class="cap">Mobile A</div><div class="bars">
+      <div class="bar a" style="width:75%">3.75</div></div></div>
+    <div class="axis"><span>0</span><span>5</span></div>
+  </div>
+  <div class="note">
+    <b>This is the reversal worth paying attention to.</b>
+    Desktop A's individual confidence scores were <b>1, 2, 4, 5</b> — wildly split. Desktop B's
+    were <b>4, 4, 4, 5</b>. Seeing the price react to their choice appears to have reassured
+    B users that the system was working on their behalf; A users had no such feedback and
+    several were left unsure whether they'd actually found a good deal.
+  </div>
+</section>
+
+<!-- ============ TASK 2 ============ -->
+<section>
+  <h2><span class="num">04</span>Task 2 — Find a better period (desktop only)</h2>
+  <p class="lede">Explore price trends and identify a cheaper time to travel.</p>
+
+  <table>
+    <tr><th>Arm</th><th class="num">Pass</th><th class="num">Ease (1–5)</th>
+        <th class="num">Median time</th><th class="num">Median clicks</th></tr>
+    <tr><td><span class="swatch sa"></span>Desktop A — Static</td>
+        <td class="num"><span class="pill mid">3/4</span></td><td class="num">3.25</td>
+        <td class="num">51.3 s</td><td class="num">20.5</td></tr>
+    <tr><td><span class="swatch sb"></span>Desktop B — Dynamic</td>
+        <td class="num"><span class="pill ok">4/4</span></td><td class="num">3.50</td>
+        <td class="num">161.7 s</td><td class="num">44.5</td></tr>
+  </table>
+
+  <h3>Effort spent in the trends view — median clicks</h3>
+  <div class="chart">
+    <div class="row"><div class="cap">Desktop A</div><div class="bars">
+      <div class="bar a" style="width:46%">20.5</div></div></div>
+    <div class="row"><div class="cap">Desktop B</div><div class="bars">
+      <div class="bar b" style="width:100%">44.5</div></div></div>
+    <div class="axis"><span>0</span><span>45 clicks</span></div>
+  </div>
+
+  <div class="note caution">
+    <b>Task 2 was markedly harder than Task 1 for everyone.</b>
+    Average ease falls from 4.9 to 3.4 across the two desktop arms, median time roughly
+    doubles, and median clicks rise threefold in A (6.5 → 20.5) and almost ninefold in B
+    (5.0 → 44.5). The one outright failure in the study happened here: a Version A participant
+    (Chile, 45–54) spent <b>309 seconds and 112 clicks</b> before skipping, rating the task
+    1/5. Their closing comment suggests they were trying to change the departure country
+    rather than explore the trends view at all — a task-comprehension problem as much as a
+    design one.
+  </div>
+
+  <div class="note win">
+    <b>The trends view does its job when people find it.</b>
+    One B participant navigated it precisely as designed and reported back the exact numbers
+    the prototype is built around — August at €130, March the cheapest at €110. Task 2 is
+    solvable; the difficulty is discovery, not comprehension.
+  </div>
+</section>
+
+<!-- ============ DISCLAIMER ============ -->
+<section>
+  <h2><span class="num">05</span>Did the disclaimer help?</h2>
+  <p class="lede">Hypothesis H4 said the explanatory line above the price graph would aid comprehension.</p>
+
+  <div class="chart">
+    <div class="row"><div class="cap">Read it, helped</div><div class="bars">
+      <div class="bar" style="width:37.5%;background:var(--green)">3</div></div></div>
+    <div class="row"><div class="cap">Didn't read / notice</div><div class="bars">
+      <div class="bar light" style="width:62.5%">5</div></div></div>
+    <div class="axis"><span>0</span><span>8 desktop participants</span></div>
+  </div>
+
+  <table>
+    <tr><th>Arm</th><th class="num">Read it</th><th>Verdict from those who did</th></tr>
+    <tr><td><span class="swatch sa"></span>Desktop A</td><td class="num">1 / 4</td>
+        <td>Helpful — used it to scan the whole year for cheap months</td></tr>
+    <tr><td><span class="swatch sb"></span>Desktop B</td><td class="num">2 / 4</td>
+        <td>Both found it helpful; one said it "clearly explained" the green bars</td></tr>
+    <tr class="total"><td>Total</td><td class="num">3 / 8</td>
+        <td>100% of readers found it useful — but 62% never saw it</td></tr>
+  </table>
+
+  <div class="note risk">
+    <b>H4 is not supported — but not disproved either.</b>
+    The disclaimer helps everyone who reads it and is missed by most people. The problem is
+    visibility, not wording. Two participants said almost exactly the same thing: <em>"I didn't
+    read it because I didn't see it"</em> and <em>"I didn't notice it"</em>. Before rewriting the
+    copy, make it harder to skip.
+  </div>
+</section>
+
+<!-- ============ BEHAVIOUR PERCEPTION ============ -->
+<section>
+  <h2><span class="num">06</span>Did people notice the behaviour?</h2>
+  <p class="lede">The central question: is moving green perceived, and how does it feel?</p>
+
+  <table>
+    <tr><th>Arm</th><th>Perception</th><th>Reaction</th></tr>
+    <tr>
+      <td><span class="swatch sa"></span><b>A — Static</b><br><span style="font-size:12.5px;color:var(--muted)">green should NOT move</span></td>
+      <td>Correctly perceived as stable. Several said they simply didn't notice any movement — which is the accurate answer.</td>
+      <td><span class="pill ok">Invisible, frictionless</span> Stability works in the background; nobody praised it because nobody saw it.</td>
+    </tr>
+    <tr>
+      <td><span class="swatch sb"></span><b>B — Dynamic</b><br><span style="font-size:12.5px;color:var(--muted)">green DOES move</span></td>
+      <td><b>8/8 noticed something changed</b> — the movement is unmistakable on both platforms.</td>
+      <td><span class="pill mid">Split</span> 4 read it as the system finding them a better deal; 3 were unsettled or felt misled; 1 neutral.</td>
+    </tr>
+  </table>
+
+  <div class="note">
+    <b>The movement itself isn't the problem — the unexplained movement is.</b>
+    Not one B participant failed because green moved. The negative reactions were all about
+    <em>not knowing why</em>: whether the price was per-leg or total, whether the new green days
+    were better or just different. Version B needs to narrate what it's doing, not stop doing it.
+  </div>
+</section>
+
+<!-- ============ VERBATIMS ============ -->
+<section>
+  <h2><span class="num">07</span>What participants said</h2>
+  <p class="lede">All 16 comments, grouped by the theme they support.
+    <span class="tag a">A</span> static · <span class="tag b">B</span> dynamic ·
+    <span class="tag d">D</span> desktop · <span class="tag m">M</span> mobile</p>
+
+  <h3>Theme 1 — "Show me the actual price" <span style="font-weight:400;color:var(--muted);font-size:14px">(strongest convergent signal)</span></h3>
+  <div class="q neg">
+    <p>"Each date box can include the prices written in small text so that I can easily compare
+      and find the price variations in the whole month."</p>
+    <p class="who">India, 25–34 <span class="tag a">A</span><span class="tag m">M</span></p>
+  </div>
+  <div class="q neg">
+    <p>"You can't really know which ones are the cheapest if there's not labels showing them
+      instead of having to browse — that would really make it easier tbh."</p>
+    <p class="who">Spain, 18–24 <span class="tag b">B</span><span class="tag m">M</span></p>
+  </div>
+  <div class="q neg">
+    <p>"When I tried looking the prices based on the green buttons, it made me feel that I was
+      picking a cheap option but the price was around 190–220 euro and not really cheaper than
+      the others. I think that I would have used the price trend as the main area instead of the
+      calendar one."</p>
+    <p class="who">Greece, 25–34 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <p style="font-size:14.5px">
+    Three people, two platforms, both arms, same request. The green highlight is a
+    <em>relative</em> signal that people read as an <em>absolute</em> promise of cheapness —
+    and with no number attached, they can't check it. The Greek participant's comment is the
+    sharpest version: the green made him feel he was getting a deal, then the price didn't
+    back that up.
+  </p>
+
+  <h3>Theme 2 — Dynamic green reads as the system helping</h3>
+  <div class="q pos">
+    <p>"Yes the green highlights updated to show the cheapest return dates and the price change
+      to under 170 euros — it made finding cheap dates very easy."</p>
+    <p class="who">India, 18–24 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q pos">
+    <p>"Yes, I noticed the calendar changed after I picked the return date. It highlighted the
+      selected dates, which made it easier to see the trip I had chosen and compare the prices."</p>
+    <p class="who">India, 25–34 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q pos">
+    <p>"Nothing! It was easy and I liked the colours in the calendar, visually they are easier
+      and more dynamic."</p>
+    <p class="who">Spain, 25–34 <span class="tag b">B</span><span class="tag m">M</span></p>
+  </div>
+  <div class="q pos">
+    <p>"Everything was perfect. Easy task."</p>
+    <p class="who">South Africa, 25–34 <span class="tag b">B</span><span class="tag m">M</span></p>
+  </div>
+
+  <h3>Theme 3 — …but unexplained movement unsettles people</h3>
+  <div class="q neg">
+    <p>"I saw the green dates change. I found that weird, as I assumed the days would remain
+      the same."</p>
+    <p class="who">Netherlands, 35–44 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neg">
+    <p>"Yeah! The price shown in the green label 'Under XXX€', it kept changing ranging 250–300
+      or so but was pretty confusing to understand. […] You can't comprehend if it's the final
+      price for both flights or each one costs around 250–300 and you need to spend a lot of
+      time comparing options."</p>
+    <p class="who">Spain, 18–24 <span class="tag b">B</span><span class="tag m">M</span> — 113 s, 108 clicks, rated 2/5</p>
+  </div>
+  <p style="font-size:14.5px">
+    Both are expectation violations rather than usability failures — they finished the task.
+    The second is the study's clearest comprehension breakdown: per-leg vs. total pricing was
+    genuinely ambiguous to them.
+  </p>
+
+  <h3>Theme 4 — Static green: quietly effective, largely unnoticed</h3>
+  <div class="q neu">
+    <p>"I noticed the cheaper days in the flights I chose, it was easy to pick the days I wanted."</p>
+    <p class="who">United Kingdom, 25–34 <span class="tag a">A</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neu">
+    <p>"Cheaper days highlighted in green, didn't notice them moving."</p>
+    <p class="who">United Kingdom, 35–44 <span class="tag a">A</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neu">
+    <p>"That's what I took into account when choosing which days I would choose for departure
+      and arrival."</p>
+    <p class="who">Chile, 45–54 <span class="tag a">A</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neu">
+    <p>"I didn't notice that."</p>
+    <p class="who">Canada, 25–34 <span class="tag a">A</span><span class="tag d">D</span> — confidence 1/5</p>
+  </div>
+  <div class="q pos">
+    <p>"I didn't notice but it made it really easy to pick the days."</p>
+    <p class="who">Portugal, 25–34 <span class="tag a">A</span><span class="tag m">M</span></p>
+  </div>
+  <div class="q neu">
+    <p>"I selected the highlighted green cells considering them as the cheapest days suggested
+      by the website."</p>
+    <p class="who">India, 25–34 <span class="tag a">A</span><span class="tag m">M</span></p>
+  </div>
+  <div class="q neu">
+    <p>"It was easy after I figured it out how does it work, it wasn't hard to figure it out."</p>
+    <p class="who">Romania, 25–34 <span class="tag a">A</span><span class="tag m">M</span></p>
+  </div>
+
+  <h3>Theme 5 — Price is not the only thing people optimise for</h3>
+  <div class="q neu">
+    <p>"Not really, my main focus was having at least a day in between the return trip and
+      arrival, and that's what made the Monday–Wednesday trip appealing."</p>
+    <p class="who">Colombia, 25–34 <span class="tag a">A</span><span class="tag m">M</span></p>
+  </div>
+  <p style="font-size:14.5px">
+    A useful corrective: this participant ignored the green entirely and optimised trip
+    <em>shape</em> instead. Any evaluation of the highlighting should account for the fact that
+    some users aren't primarily price-driven.
+  </p>
+
+  <h3>Theme 6 — Disclaimer feedback (desktop Task 2)</h3>
+  <div class="q pos">
+    <p>"Yes I read it, it was helpful because it clearly explained that the green bar shows the
+      cheapest dates to fly."</p>
+    <p class="who">India, 18–24 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q pos">
+    <p>"Yes, I read it. It helped me understand that the prices shown were the cheapest options,
+      so I found it useful rather than unnecessary."</p>
+    <p class="who">India, 25–34 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q pos">
+    <p>"It helped understand the prices, I just looked at the trends throughout the whole year
+      to see which months were the cheapest."</p>
+    <p class="who">United Kingdom, 25–34 <span class="tag a">A</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neg">
+    <p>"I didn't read it because I didn't see it."</p>
+    <p class="who">Chile, 45–54 <span class="tag a">A</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neg">
+    <p>"I didn't notice it. I just checked the calendar and the prices on the bottom left. After
+      that I noticed the 'price trends' area which told me that August had a price of 130 euro
+      but the lowest was in March with a price of 110 euro."</p>
+    <p class="who">Greece, 25–34 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neg">
+    <p>"No. I don't seem to remember what it said, so I don't think it helped me understand
+      the prices."</p>
+    <p class="who">Netherlands, 35–44 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neg">
+    <p>"I didn't read it, I just looked at the cheapest price."</p>
+    <p class="who">Canada, 25–34 <span class="tag a">A</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neu">
+    <p>"I didn't notice it but found the infographic easy to understand."</p>
+    <p class="who">United Kingdom, 35–44 <span class="tag a">A</span><span class="tag d">D</span></p>
+  </div>
+
+  <h3>Theme 7 — Prototype artefacts (discount these)</h3>
+  <div class="q neu">
+    <p>"I would like my country, Chile, to be on the list of countries of departure."</p>
+    <p class="who">Chile, 45–54 <span class="tag a">A</span><span class="tag d">D</span></p>
+  </div>
+  <div class="q neu">
+    <p>"I don't feel like I got the most out of the website — it autocompleted some steps before
+      I can get the most out of it first."</p>
+    <p class="who">Greece, 25–34 <span class="tag b">B</span><span class="tag d">D</span></p>
+  </div>
+  <p style="font-size:14.5px">
+    Both stem from the prototype's fixed city list and pre-filled dates, not the design under
+    test. The first likely explains the study's only task failure: that participant appears to
+    have spent Task 2 hunting for a departure country rather than exploring price trends.
+  </p>
+</section>
+
+<!-- ============ HYPOTHESES ============ -->
+<section>
+  <h2><span class="num">08</span>Hypotheses vs. outcome</h2>
+  <table>
+    <tr><th>#</th><th>Hypothesis</th><th>Verdict</th><th>Evidence</th></tr>
+    <tr><td>H1</td><td>Both groups can complete Task 1</td>
+        <td><span class="pill ok">Confirmed</span></td>
+        <td>16/16 passed, median under 30 s in three of four arms</td></tr>
+    <tr><td>H2</td><td>Version A gives lower difficulty and clearer understanding</td>
+        <td><span class="pill mid">Partial</span></td>
+        <td>A easier by 0.25 on both platforms — inside noise at n=4</td></tr>
+    <tr><td>H2b</td><td><i>(implied)</i> Version A feels more trustworthy</td>
+        <td><span class="pill no">Contradicted</span></td>
+        <td>Desktop confidence 3.0 (A) vs 4.25 (B); A's scores far more erratic</td></tr>
+    <tr><td>H3</td><td>Version B causes surprise or confusion</td>
+        <td><span class="pill ok">Confirmed</span></td>
+        <td>8/8 noticed the change; 3 unsettled, 4 read it positively</td></tr>
+    <tr><td>H4</td><td>The disclaimer improves comprehension</td>
+        <td><span class="pill no">Not supported</span></td>
+        <td>Only 3/8 read it — though all 3 found it helpful</td></tr>
+  </table>
+</section>
+
+<!-- ============ RECOMMENDATIONS ============ -->
+<section>
+  <h2><span class="num">09</span>What to do next</h2>
+
+  <h3>1 · Put prices on the days <span class="pill no">Highest impact</span></h3>
+  <p>The single most requested change, raised independently by three participants across both
+  arms and platforms. Green currently makes a promise the interface never substantiates. Even
+  small per-day figures — or a price on the selected day — would let people verify the signal
+  instead of trusting it blindly. On desktop this exists only as a hover tooltip; on mobile
+  there is nothing at all.</p>
+
+  <h3>2 · Resolve the per-leg vs. total ambiguity <span class="pill no">Blocking for B</span></h3>
+  <p>The worst session in the study (113 s, 108 clicks, rated 2/5) came down to one unanswered
+  question: is "Under €X" the price of one flight or both? Version B's dynamic pricing makes
+  this ambiguity much sharper, because the number visibly moves. Label it explicitly.</p>
+
+  <h3>3 · Make the disclaimer unmissable before rewriting it <span class="pill mid">Medium</span></h3>
+  <p>Five of eight desktop participants never saw it. The copy is fine — everyone who read it
+  found it useful. Position and prominence are the problem.</p>
+
+  <h3>4 · Raise the price-trends view's prominence <span class="pill mid">Medium</span></h3>
+  <p>Task 2 was three to four times harder than Task 1 by every measure, and one participant
+  suggested unprompted that trends should be the primary surface rather than a secondary tab.
+  It answers the question people actually have — <em>when should I go?</em> — but they have to
+  find it first.</p>
+
+  <h3>5 · Don't abandon the dynamic behaviour on this evidence <span class="pill ok">Verdict</span></h3>
+  <p>B did not lose. It matched A on completion, beat it on confidence, and was the only arm
+  with a perfect Task 2 record. Its problem is silence, not motion: when green moves without
+  explanation, a minority find it unsettling. Narrate the recalculation — a brief "cheapest
+  returns for your dates" — and the friction likely disappears.</p>
+</section>
+
+<!-- ============ CAVEATS ============ -->
+<section>
+  <h2><span class="num">10</span>How much to trust this</h2>
+  <div class="note caution">
+    <b>Four participants per arm. These are directional signals, not statistics.</b>
+    A single person changes any mean by 0.25–0.5 points, so no difference reported here
+    would survive a significance test, and none is claimed to. What the study is good for
+    is surfacing <em>which questions matter</em> — and on that it delivered clearly:
+    the missing prices and the per-leg ambiguity both showed up repeatedly and independently.
+  </div>
+  <ul>
+    <li><b>Mobile arms tested Task 1 only</b> — there is no price-trends view on mobile, so all
+      Task 2 findings are desktop-only.</li>
+    <li><b>Confidence wasn't captured for mobile B</b>, so the confidence reversal is evidenced
+      on desktop alone.</li>
+    <li><b>Two comments reflect prototype limits</b> (fixed city list, pre-filled dates) rather
+      than the design under test, and one of those probably caused the study's only task failure.</li>
+    <li><b>Self-reported ease clusters at the ceiling</b> — 13 of 16 gave Task 1 a 5. Behavioural
+      measures (time, clicks) discriminate better at this sample size.</li>
+    <li><b>Next step:</b> 12–15 per arm would tell you whether B's confidence advantage is real.
+      At n=4 it rests on four people.</li>
+  </ul>
+  <p style="font-size:13.5px;color:var(--muted);margin-top:18px">
+    Participants are identified only by country and age band. No names, Prolific IDs or session
+    identifiers appear in this report.
+  </p>
+</section>
+
+<footer>
+  Prices Calendar A/B usability test · 16 participants · Useberry + Prolific ·
+  Desktop 17 Aug 2026, Mobile 13 Aug 2026
+</footer>
+
+</div>
+</body>
+</html>
